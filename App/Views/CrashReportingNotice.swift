@@ -6,13 +6,13 @@ struct CrashReportingNotice: View {
 
   var body: some View {
     if !seen && Telemetry.isEnabled {
-      HStack(alignment: .top, spacing: DS.Spacing.tight) {
+      HStack(alignment: .top, spacing: DS.Spacing.standard) {
         Image(systemName: "info.circle").foregroundStyle(.secondary)
-        VStack(alignment: .leading, spacing: 2) {
-          Text("Crash reports are on. No orders or cookies ever leave your Mac.")
-            .font(.callout)
-          Text("Turn off in Settings (⌘,).").font(.caption).foregroundStyle(.secondary)
-        }
+        Text(
+          "Crash reports are on. No orders or cookies ever leave your Mac. "
+            + "Turn off in Settings (⌘,)."
+        )
+        .font(.callout)
         .fixedSize(horizontal: false, vertical: true)  // wrap, don't truncate
         Spacer(minLength: DS.Spacing.tight)
         Button("Got it") { seen = true }

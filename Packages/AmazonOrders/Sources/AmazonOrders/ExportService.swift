@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Renders a logged-in Amazon page to its post-JavaScript HTML. The concrete
 /// implementation (WKWebView) lives in the app; this protocol lets `ExportService`
@@ -34,6 +35,7 @@ public struct ExportSummary: Sendable, Equatable {
 @MainActor
 public final class ExportService {
   private let renderer: any OrderPageRendering
+  private let log = Logger(subsystem: "io.respawn.AmazonOrderExport", category: "export")
 
   public init(renderer: any OrderPageRendering) {
     self.renderer = renderer
@@ -94,6 +96,15 @@ public final class ExportService {
         all.append(order)
       }
       frontier.append(contentsOf: page.pageStartIndices.filter { !visited.contains($0) })
+      // Diagnostic: does Amazon honor this timeFilter? Compare the header count
+      // (Amazon's own "N orders") and the pager across last-30 / months-3 / year.
+      log.info(
+        """
+        fetch timeFilter=\(range.timeFilter ?? "all", privacy: .public) start=\(start): \
+        header=\(page.orderCount ?? -1) cards=\(page.orders.count) \
+        pager=\(page.pageStartIndices.map(String.init).joined(separator: ","), privacy: .public) \
+        total=\(all.count)
+        """)
       onProgress(.fetchingOrders(collected: all.count))
     }
     return rawCount

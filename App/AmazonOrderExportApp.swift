@@ -21,7 +21,7 @@ struct AmazonOrderExportApp: App {
         // pinned top-leading so every screen's heading sits in the same spot.
         // minHeight is a floor (grows for large Dynamic Type), not a fixed clip.
         .frame(
-          minWidth: DS.screenWidth, maxWidth: DS.screenWidth, minHeight: 360,
+          minWidth: DS.screenWidth, maxWidth: DS.screenWidth, minHeight: 440,
           alignment: .topLeading)
     }
     .windowResizability(.contentSize)
