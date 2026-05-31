@@ -4,7 +4,6 @@ import Foundation
 public enum AmazonEndpoint: Sendable {
   case signIn
   case orders
-  case account
 
   public var url: URL {
     switch self {
@@ -12,8 +11,6 @@ public enum AmazonEndpoint: Sendable {
       return URL(string: "https://www.amazon.com/ap/signin")!
     case .orders:
       return URL(string: "https://www.amazon.com/your-orders/orders")!
-    case .account:
-      return URL(string: "https://www.amazon.com/gp/css/homepage.html")!
     }
   }
 
