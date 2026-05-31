@@ -27,3 +27,6 @@ exports/
 
 # Raw captured Amazon HTML (contains PII) — scrub before committing as fixtures
 fixtures-raw/
+
+# Local convenience symlink to the built binary
+/aox
