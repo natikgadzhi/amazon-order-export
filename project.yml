@@ -18,8 +18,8 @@ settings:
 targets:
   AmazonOrderExport:
     # An .app bundle (not a bare tool): WKWebView's WebContent helper process
-    # only launches from inside a real, signed bundle. We still drive it as a CLI
-    # via .app/Contents/MacOS/AmazonOrderExport <subcommand>.
+    # only launches from inside a real, signed bundle. It's a normal windowed
+    # SwiftUI app.
     type: application
     platform: macOS
     sources:
