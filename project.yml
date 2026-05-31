@@ -1,0 +1,46 @@
+name: AmazonOrderExport
+options:
+  bundleIdPrefix: io.respawn
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+packages:
+  AmazonAuth:
+    path: Packages/AmazonAuth
+  AmazonOrders:
+    path: Packages/AmazonOrders
+  ArgumentParser:
+    url: https://github.com/apple/swift-argument-parser
+    from: 1.5.0
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  AmazonOrderExport:
+    # An .app bundle (not a bare tool): WKWebView's WebContent helper process
+    # only launches from inside a real, signed bundle. We still drive it as a CLI
+    # via .app/Contents/MacOS/AmazonOrderExport <subcommand>.
+    type: application
+    platform: macOS
+    sources:
+      - App
+    dependencies:
+      - package: AmazonAuth
+      - package: AmazonOrders
+      - package: ArgumentParser
+        product: ArgumentParser
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
+        GENERATE_INFOPLIST_FILE: YES
+        # Ad-hoc sign for local runs so the WebContent/network XPC services start.
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+    scheme:
+      # So ⌘R in Xcode runs the login flow (no-arg launch just prints help).
+      # Toggle to `check` in Edit Scheme → Run → Arguments when you want that.
+      commandLineArguments:
+        "authenticate": true

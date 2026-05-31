@@ -14,7 +14,13 @@ DerivedData/
 .swiftpm/
 Package.resolved
 
+# XcodeGen output (regenerate with `make generate`)
+*.xcodeproj
+
 # Local config / secrets / exports
 *.local.json
 exports/
 *.csv
+
+# Fixed xcodebuild output
+.build-xcode/
