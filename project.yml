@@ -31,6 +31,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
         GENERATE_INFOPLIST_FILE: YES
+        # Spaced display name everywhere (menu bar, About panel, Finder).
+        INFOPLIST_KEY_CFBundleDisplayName: Amazon Order Export
         # Stable code signature, on purpose. macOS keys a Keychain item's
         # no-prompt access on the app's *designated requirement* (team + bundle
         # id) for a real identity, but on the per-build cdhash for an ad-hoc

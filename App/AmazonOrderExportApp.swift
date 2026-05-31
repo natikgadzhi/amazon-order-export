@@ -11,8 +11,16 @@ struct AmazonOrderExportApp: App {
   var body: some Scene {
     Window("Amazon Order Export", id: "main") {
       RootView(model: model)
-        .frame(minWidth: DS.screenWidth, minHeight: 420)
+        // Fixed width; height hugs the current screen (windowResizability below),
+        // so the window stays compact with no dead vertical space.
+        .frame(width: DS.screenWidth)
     }
     .windowResizability(.contentSize)
+    .commands {
+      // Replace the stock About item with our branded panel.
+      CommandGroup(replacing: .appInfo) {
+        Button("About Amazon Order Export") { About.showPanel() }
+      }
+    }
   }
 }
