@@ -80,13 +80,26 @@ final class OrderPageRenderer: NSObject, WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError error: Error) {
-    navigation?.resume(throwing: error)
-    navigation = nil
+    failUnlessSuperseded(error)
   }
 
   func webView(
     _ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error
   ) {
+    failUnlessSuperseded(error)
+  }
+
+  /// A `-999` (`NSURLErrorCancelled`) means the navigation was superseded — almost
+  /// always by a server or client-side redirect, which Amazon fires on the orders
+  /// page right after a fresh sign-in. It is *not* a real failure: ignore it and
+  /// let the redirect target's `didFinish` resume the original `load`. Only a
+  /// genuine error fails the continuation.
+  private func failUnlessSuperseded(_ error: Error) {
+    let nsError = error as NSError
+    if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+      log.info("navigation superseded (-999); waiting for the redirect to finish")
+      return
+    }
     navigation?.resume(throwing: error)
     navigation = nil
   }
