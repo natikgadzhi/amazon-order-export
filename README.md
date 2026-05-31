@@ -19,7 +19,9 @@ only — your own order history, on your own machine. Not a product scraper.
   in the macOS Keychain, not a file. See `docs/` for the design and security notes.
 
 The app is a standard windowed macOS app (`.app` bundle — WKWebView's helper
-process requires one).
+process requires one). It's built with SwiftUI; the scraping + CSV logic lives in
+`Packages/` (unit-tested against PII-scrubbed HTML fixtures) and `App/` is a thin
+SwiftUI shell over it.
 
 ## Build
 
@@ -35,11 +37,18 @@ make clean        # remove build artifacts
 
 ## Use
 
-1. `make run` — or `make build` then `open .build-xcode/Build/Products/Debug/AmazonOrderExport.app`, or just double-click the `.app` in Finder.
-2. In the window, click **Choose Folder** and pick where the CSVs should land.
+1. **`make run`** — builds and launches the app. (Or `make build`, then open
+   `.build-xcode/Build/Products/Debug/AmazonOrderExport.app`, or double-click it in Finder.)
+2. The destination defaults to **`~/Desktop/amazon-orders/`** (created automatically on
+   first export). Click **Choose…** to pick a different folder — the panel has a
+   **New Folder** button.
 3. Pick a date range: **Last 30 days**, **Past 3 months**, **This year**, or **All time**.
-4. Click **Sign in & Export**. An Amazon sign-in sheet appears; log in normally.
-5. The app scrapes your orders headlessly and writes the CSVs to the chosen folder.
+4. Click **Sign in & Export**. An Amazon sign-in sheet appears; sign in normally
+   (or **Cancel** to back out). After login it exports automatically.
+5. The app scrapes your orders headlessly, writes the three CSVs, and offers
+   **Reveal in Finder**.
+
+Standard macOS shortcuts work (⌘Q quit, ⌘W close, ⌘M minimize, ⌘H hide).
 
 ### Outputs
 
