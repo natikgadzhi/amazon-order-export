@@ -1,4 +1,4 @@
-.PHONY: contrib install-hooks generate format lint-format test build authenticate check sync dump
+.PHONY: contrib install-hooks generate format lint-format test build clean where authenticate check sync dump
 
 SWIFT_FORMAT_PATHS = App Packages
 YEAR ?= 2026
@@ -37,6 +37,14 @@ test:
 build: generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIG) \
 		-derivedDataPath $(DERIVED) build
+
+# Delete build artifacts. Leaves the generated .xcodeproj (cheap to regenerate).
+clean:
+	rm -rf $(DERIVED)
+
+# Print the built binary's path so you can run it directly:  $(make where) sync ...
+where:
+	@echo $(BIN)
 
 # Interactive Amazon login. Equivalent to running the app in Xcode (⌘R), which
 # is the most reliable way to see the login page + console logs.
