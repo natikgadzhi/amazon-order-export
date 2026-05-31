@@ -10,8 +10,7 @@ public enum OrdersListParser {
     public static func parse(html: String) throws -> OrdersPage {
         let doc = try SwiftSoup.parse(html)
 
-        let orderCount = try doc.select(Sel.numOrders).first().map { try $0.text() }
-            .flatMap(Parse.firstInt(in:))
+        let orderCount = try doc.firstText(Sel.numOrders).flatMap(Parse.firstInt(in:))
 
         let selectedYear = try doc.select(Sel.yearOptionSelected).first()?
             .attr("value").replacingOccurrences(of: "year-", with: "")
@@ -34,33 +33,25 @@ public enum OrdersListParser {
 
     private static func parseCard(_ card: Element) throws -> OrderSummary {
         // Order id: prefer the visible "Order #" value; fall back to the slot id.
-        let id =
-            try card.select(Sel.orderIdValue).first().map { try $0.text() }
-            ?? slotID(card) ?? ""
+        let id = try card.firstText(Sel.orderIdValue) ?? slotID(card) ?? ""
 
         var placedRaw = ""
         var total: Money?
         for li in try card.select(Sel.headerListItem).array() {
-            let label = try li.select(Sel.capsLabel).first().map { try $0.text() } ?? ""
+            let label = try li.firstText(Sel.capsLabel) ?? ""
             switch label.lowercased() {
             case "order placed":
-                placedRaw = try li.select(Sel.baseValue).first().map { try $0.text() } ?? ""
+                placedRaw = try li.firstText(Sel.baseValue) ?? ""
             case "total":
-                if let v = try li.select(Sel.baseValue).first().map({ try $0.text() }) {
-                    total = Money(v)
-                }
+                total = try li.firstText(Sel.baseValue).map(Money.init)
             default:
                 break
             }
         }
 
-        let recipient = try card.select(Sel.recipientTrigger).first().map { try $0.text() }
-
-        let detailPath = try card.select(Sel.orderDetailsLink).first().map { try $0.attr("href") }
-
-        let andMore =
-            try card.select(Sel.andMore).first().map { try $0.text() }
-            .flatMap(Parse.firstInt(in:)) ?? 0
+        let recipient = try card.firstText(Sel.recipientTrigger)
+        let detailPath = try card.firstAttr(Sel.orderDetailsLink, "href")
+        let andMore = try card.firstText(Sel.andMore).flatMap(Parse.firstInt(in:)) ?? 0
 
         return OrderSummary(
             id: id, orderPlaced: Parse.date(placedRaw), orderPlacedRaw: placedRaw,
@@ -73,13 +64,9 @@ public enum OrdersListParser {
 
         // Detailed rows (title + image + optional quantity badge).
         for box in try card.select(Sel.listItemDetailed).array() {
-            let href = try box.select(Sel.dpLink).first().map { try $0.attr("href") }
-            let title =
-                try box.select(Sel.productTitleLink).first().map { try $0.text() }
-                ?? imgAlt(box)
-            let qty =
-                try box.select(Sel.qtyBadge).first().map { try $0.text() }
-                .flatMap(Parse.firstInt(in:)) ?? 1
+            let href = try box.firstAttr(Sel.dpLink, "href")
+            let title = try box.firstText(Sel.productTitleLink) ?? imgAlt(box)
+            let qty = try box.firstText(Sel.qtyBadge).flatMap(Parse.firstInt(in:)) ?? 1
             items.append(
                 OrderItem(
                     asin: href.flatMap(Parse.asin(fromHref:)), title: title,
@@ -88,7 +75,7 @@ public enum OrdersListParser {
 
         // Image-only grocery grid tiles.
         for tile in try card.select(Sel.listItemGridImage).array() {
-            let href = try tile.select(Sel.dpLink).first().map { try $0.attr("href") }
+            let href = try tile.firstAttr(Sel.dpLink, "href")
             items.append(
                 OrderItem(
                     asin: href.flatMap(Parse.asin(fromHref:)), title: imgAlt(tile),
@@ -104,11 +91,11 @@ public enum OrdersListParser {
     }
 
     private static func imgAlt(_ el: Element) -> String? {
-        let alt = (try? el.select("img").first()?.attr("alt")) ?? nil
+        let alt = (try? el.firstAttr("img", "alt")) ?? nil
         return (alt?.isEmpty == false) ? alt : nil
     }
 
     private static func imgSrc(_ el: Element) throws -> String? {
-        try el.select("img").first().map { try $0.attr("src") }
+        try el.firstAttr("img", "src")
     }
 }

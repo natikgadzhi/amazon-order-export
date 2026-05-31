@@ -1,4 +1,18 @@
 import Foundation
+import SwiftSoup
+
+extension Element {
+    /// Text of the first descendant matching `selector`, or nil if none.
+    /// Collapses the repeated `select(sel).first().map { try $0.text() }` dance.
+    func firstText(_ selector: String) throws -> String? {
+        try select(selector).first().map { try $0.text() }
+    }
+
+    /// Value of `attribute` on the first descendant matching `selector`, or nil.
+    func firstAttr(_ selector: String, _ attribute: String) throws -> String? {
+        try select(selector).first().map { try $0.attr(attribute) }
+    }
+}
 
 /// **All** Amazon DOM coupling lives here, on purpose.
 ///
