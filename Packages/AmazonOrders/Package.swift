@@ -6,10 +6,10 @@ let package = Package(
     name: "AmazonOrders",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "AmazonOrders", targets: ["AmazonOrders"]),
+        .library(name: "AmazonOrders", targets: ["AmazonOrders"])
     ],
     dependencies: [
-        .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.11.2"),
+        .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.11.2")
     ],
     targets: [
         .target(name: "AmazonOrders", dependencies: ["SwiftSoup"]),

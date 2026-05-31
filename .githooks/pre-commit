@@ -1,0 +1,30 @@
+#!/bin/zsh
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if ! command -v swift-format >/dev/null 2>&1; then
+  echo "swift-format is required for pre-commit formatting." >&2
+  echo "Install Xcode 16+ command line tools or make sure swift-format is on PATH." >&2
+  exit 1
+fi
+
+typeset -a swift_files
+
+while IFS= read -r -d '' file; do
+  [[ -f "$file" ]] || continue
+
+  case "$file" in
+    *.swift)
+      swift_files+=("$file")
+      ;;
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if (( ${#swift_files[@]} > 0 )); then
+  swift-format format --in-place --configuration .swift-format "${swift_files[@]}"
+  git add -- "${swift_files[@]}"
+fi
+
+git diff --cached --check

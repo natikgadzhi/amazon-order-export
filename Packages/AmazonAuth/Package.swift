@@ -6,7 +6,7 @@ let package = Package(
     name: "AmazonAuth",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "AmazonAuth", targets: ["AmazonAuth"]),
+        .library(name: "AmazonAuth", targets: ["AmazonAuth"])
     ],
     targets: [
         .target(name: "AmazonAuth"),
