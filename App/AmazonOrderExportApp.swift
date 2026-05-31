@@ -11,9 +11,12 @@ struct AmazonOrderExportApp: App {
   var body: some Scene {
     Window("Amazon Order Export", id: "main") {
       RootView(model: model)
-        // Fixed width; height hugs the current screen (windowResizability below),
-        // so the window stays compact with no dead vertical space.
-        .frame(width: DS.screenWidth)
+        // Fixed, compact size sized to fit the tallest (idle) screen, with content
+        // pinned top-leading so every screen's heading sits in the same spot.
+        // minHeight is a floor (grows for large Dynamic Type), not a fixed clip.
+        .frame(
+          minWidth: DS.screenWidth, maxWidth: DS.screenWidth, minHeight: 360,
+          alignment: .topLeading)
     }
     .windowResizability(.contentSize)
     .commands {
