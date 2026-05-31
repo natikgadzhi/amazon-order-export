@@ -9,6 +9,8 @@ packages:
     path: Packages/AmazonAuth
   AmazonOrders:
     path: Packages/AmazonOrders
+  TelemetryScrub:
+    path: Packages/TelemetryScrub
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa.git
     from: 8.57.3
@@ -30,6 +32,8 @@ targets:
     dependencies:
       - package: AmazonAuth
       - package: AmazonOrders
+      - package: TelemetryScrub
+        product: TelemetryScrub
       - package: Sentry
         product: Sentry
     settings:
