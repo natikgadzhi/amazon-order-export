@@ -5,8 +5,14 @@ import SwiftUI
 /// because a SwiftUI app already runs an AppKit run loop — no manual shim needed.
 @main
 struct AmazonOrderExportApp: App {
-  @State private var model = ExportModel(
-    authManager: AmazonAuthManager(secretStore: KeychainAmazonSecretStore()))
+  @State private var model: ExportModel
+
+  init() {
+    Telemetry.start()  // no-op unless enabled AND a DSN was baked in (release builds only)
+    _model = State(
+      initialValue: ExportModel(
+        authManager: AmazonAuthManager(secretStore: KeychainAmazonSecretStore())))
+  }
 
   var body: some Scene {
     Window("Amazon Order Export", id: "main") {
@@ -19,6 +25,10 @@ struct AmazonOrderExportApp: App {
           alignment: .topLeading)
     }
     .windowResizability(.contentSize)
+
+    Settings {
+      SettingsView()
+    }
     .commands {
       // Replace the stock About item with our branded panel.
       CommandGroup(replacing: .appInfo) {

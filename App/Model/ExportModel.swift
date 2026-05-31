@@ -123,6 +123,7 @@ final class ExportModel {
         phase = .authenticating
         authManager.startLogin()
       } catch {
+        Telemetry.report(error)
         commit(.failed(message: error.localizedDescription, canReauth: false))
       }
     }

@@ -9,6 +9,7 @@ struct IdleView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: DS.Spacing.loose) {
+      CrashReportingNotice()
       Text("Export your Amazon orders")
         .font(.title).bold()
       Text(
