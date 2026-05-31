@@ -1,0 +1,35 @@
+name: AmazonOrderExport
+options:
+  bundleIdPrefix: io.respawn
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+packages:
+  AmazonAuth:
+    path: Packages/AmazonAuth
+  AmazonOrders:
+    path: Packages/AmazonOrders
+  ArgumentParser:
+    url: https://github.com/apple/swift-argument-parser
+    from: 1.5.0
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  AmazonOrderExport:
+    type: tool        # command-line tool that still links AppKit/WebKit
+    platform: macOS
+    sources:
+      - App
+    dependencies:
+      - package: AmazonAuth
+      - package: AmazonOrders
+      - package: ArgumentParser
+        product: ArgumentParser
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
