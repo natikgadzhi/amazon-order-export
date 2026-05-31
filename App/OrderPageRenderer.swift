@@ -1,4 +1,5 @@
 import AmazonAuth
+import AmazonOrders
 import WebKit
 import os
 
@@ -90,5 +91,11 @@ final class OrderPageRenderer: NSObject, WKNavigationDelegate {
   ) {
     navigation?.resume(throwing: error)
     navigation = nil
+  }
+}
+
+extension OrderPageRenderer: OrderPageRendering {
+  func renderedHTML(url: URL, readySelector: String) async throws -> String {
+    try await renderedHTML(url: url, readySelector: readySelector, timeout: .seconds(20))
   }
 }
