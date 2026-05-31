@@ -9,6 +9,9 @@ packages:
     path: Packages/AmazonAuth
   AmazonOrders:
     path: Packages/AmazonOrders
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa.git
+    from: 8.57.3
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -27,10 +30,16 @@ targets:
     dependencies:
       - package: AmazonAuth
       - package: AmazonOrders
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
-        GENERATE_INFOPLIST_FILE: YES
+        # App/Info.plist is a hand-written template with $(VAR) substitutions.
+        # We use INFOPLIST_FILE instead of GENERATE_INFOPLIST_FILE because
+        # GENERATE_INFOPLIST_FILE + INFOPLIST_KEY_* only supports Apple-registered
+        # keys; custom keys like SENTRY_DSN need a real plist template.
+        INFOPLIST_FILE: App/Info.plist
         # Spaced display name everywhere (menu bar, About panel, Finder).
         INFOPLIST_KEY_CFBundleDisplayName: Amazon Order Export
         # Stable code signature, on purpose. macOS keys a Keychain item's
@@ -44,3 +53,8 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "Developer ID Application"
         DEVELOPMENT_TEAM: "9YKSA5B4FP"
+        # Sentry DSN is injected at build time only for official releases:
+        # the release workflow passes SENTRY_DSN=<secret> to xcodebuild. Empty by
+        # default, so local `make run` and open-source/CI builds have no DSN and
+        # telemetry stays disabled (see App/Telemetry.swift's start() guard).
+        SENTRY_DSN: ""
