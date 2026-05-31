@@ -9,9 +9,8 @@ import AppKit
 enum About {
   /// Per-app copy — the only thing that differs between apps.
   private static let summary = """
-    Export your own Amazon order and transaction history to CSV, for reconciling \
-    against bank transactions and budgeting (e.g. Copilot). Personal-data export \
-    only — your own order history, on your own machine.
+    Export your own Amazon order and transaction history to CSV. Personal-data \
+    export only — your own order history, on your own machine.
     """
   private static let repo = URL(string: "https://github.com/natikgadzhi/amazon-order-export")!
 
