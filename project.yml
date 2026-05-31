@@ -20,7 +20,10 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 targets:
   AmazonOrderExport:
-    type: tool        # command-line tool that still links AppKit/WebKit
+    # An .app bundle (not a bare tool): WKWebView's WebContent helper process
+    # only launches from inside a real, signed bundle. We still drive it as a CLI
+    # via .app/Contents/MacOS/AmazonOrderExport <subcommand>.
+    type: application
     platform: macOS
     sources:
       - App
@@ -32,4 +35,12 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
-        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        GENERATE_INFOPLIST_FILE: YES
+        # Ad-hoc sign for local runs so the WebContent/network XPC services start.
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+    scheme:
+      # So ⌘R in Xcode runs the login flow (no-arg launch just prints help).
+      # Toggle to `check` in Edit Scheme → Run → Arguments when you want that.
+      commandLineArguments:
+        "authenticate": true
