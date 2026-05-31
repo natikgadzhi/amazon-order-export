@@ -18,10 +18,7 @@ public enum OrdersListParser {
 
         var starts = Set<Int>()
         for link in try doc.select(Sel.pagerLink).array() {
-            let href = try link.attr("href")
-            if let comps = URLComponents(
-                string: "https://x/?" + (href.split(separator: "?").last.map(String.init) ?? "")),
-                let value = comps.queryItems?.first(where: { $0.name == "startIndex" })?.value,
+            if let value = Parse.queryValue("startIndex", inHref: try link.attr("href")),
                 let n = Int(value)
             {
                 starts.insert(n)

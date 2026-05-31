@@ -48,9 +48,7 @@ public enum OrderDetailParser {
     private static func transactionsTag(_ root: Element) throws -> String? {
         guard let href = try root.select(Sel.transactionsLink).first().map({ try $0.attr("href") })
         else { return nil }
-        let query = href.split(separator: "?").last.map(String.init) ?? ""
-        return URLComponents(string: "https://x/?" + query)?
-            .queryItems?.first { $0.name == "transactionTag" }?.value
+        return Parse.queryValue("transactionTag", inHref: href)
     }
 
     private static func parseItems(_ root: Element) throws -> [OrderItem] {

@@ -23,7 +23,7 @@ struct SyncCommand: AsyncParsableCommand {
     @MainActor
     private static func export(year: Int, outDir: String) async {
         guard let secrets = KeychainAmazonSecretStore().read() else {
-            return stderr("no stored session — run `authenticate` first")
+            fail("no stored session — run `authenticate` first")
         }
         do {
             let renderer = await OrderPageRenderer(secrets: secrets)
@@ -56,14 +56,19 @@ struct SyncCommand: AsyncParsableCommand {
                     to: dir.appendingPathComponent("items.csv"), atomically: true, encoding: .utf8)
             print("Wrote \(orders.count) orders → \(dir.path)/orders.csv, items.csv")
         } catch is OrderPageRenderer.ExpiredSession {
-            stderr("session expired — run `authenticate` again")
+            fail("session expired — run `authenticate` again")
         } catch {
-            stderr("sync failed: \(error)")
+            fail("sync failed: \(error)")
         }
     }
 
-    fileprivate static func stderr(_ message: String) {
+    /// Print to stderr and exit non-zero. ArgumentParser only sets a failure exit
+    /// code when `run()` throws, but our work runs inside the AppKit run loop and
+    /// can't throw back out — so failures must set the code themselves, or scripts
+    /// calling `sync` would see success on a failed export.
+    fileprivate static func fail(_ message: String) -> Never {
         FileHandle.standardError.write(Data((message + "\n").utf8))
+        Foundation.exit(EXIT_FAILURE)  // not ArgumentParser's Command.exit(_:)
     }
 }
 
@@ -84,7 +89,7 @@ struct DumpOrdersCommand: AsyncParsableCommand {
         let (year, out, startIndex) = (self.year, self.out, self.startIndex)
         AppRunLoop.runHeadless {
             guard let secrets = KeychainAmazonSecretStore().read() else {
-                return SyncCommand.stderr("no stored session — run `authenticate` first")
+                SyncCommand.fail("no stored session — run `authenticate` first")
             }
             do {
                 let renderer = await OrderPageRenderer(secrets: secrets)
@@ -94,7 +99,7 @@ struct DumpOrdersCommand: AsyncParsableCommand {
                 try html.write(toFile: out, atomically: true, encoding: .utf8)
                 print("Wrote \(html.count) bytes → \(out)")
             } catch {
-                SyncCommand.stderr("dump-orders failed: \(error)")
+                SyncCommand.fail("dump-orders failed: \(error)")
             }
         }
     }

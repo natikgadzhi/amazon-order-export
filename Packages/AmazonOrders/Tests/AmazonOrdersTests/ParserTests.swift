@@ -18,6 +18,7 @@ struct MoneyTests {
     func parse() {
         #expect(Money("$29.83").amount == dec("29.83"))
         #expect(Money("-$1.50").amount == dec("-1.50"))
+        #expect(Money("($5.00)").amount == dec("-5.00"))  // accounting-format credit
         #expect(Money(" $6.92 ").raw == "$6.92")
         #expect(Money("—").amount == nil)
     }

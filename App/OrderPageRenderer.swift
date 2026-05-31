@@ -65,6 +65,10 @@ final class OrderPageRenderer: NSObject, WKNavigationDelegate {
     }
 
     private func load(_ url: URL) async throws {
+        // Not re-entrant: a second concurrent navigation would overwrite the first
+        // continuation (the wrong caller gets resumed, the other hangs). Callers
+        // render pages sequentially; make a violation a loud crash, not silent corruption.
+        precondition(navigation == nil, "OrderPageRenderer.renderedHTML is not re-entrant")
         try await withCheckedThrowingContinuation { (k: CheckedContinuation<Void, Error>) in
             navigation = k
             webView.load(URLRequest(url: url))

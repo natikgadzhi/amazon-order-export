@@ -12,7 +12,11 @@ public struct Money: Equatable, Sendable {
     public init(_ raw: String) {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         self.raw = trimmed
-        let kept = trimmed.filter { $0.isNumber || $0 == "." || $0 == "-" }
+        // Amazon shows credits/refunds in accounting format, e.g. "($5.00)" —
+        // parentheses mean negative, so the parsed amount must flip sign.
+        let negative = trimmed.hasPrefix("(") && trimmed.hasSuffix(")")
+        var kept = trimmed.filter { $0.isNumber || $0 == "." || $0 == "-" }
+        if negative, !kept.hasPrefix("-") { kept = "-" + kept }
         self.amount = kept.isEmpty ? nil : Decimal(string: kept)
     }
 }

@@ -67,6 +67,16 @@ enum Parse {
         return digits.isEmpty ? nil : Int(digits)
     }
 
+    /// Value of query item `name` from a possibly-relative href. Takes everything
+    /// after the *first* `?` (not the last), so a value that itself contains `?`
+    /// can't drop the parameter we want. SwiftSoup has already decoded `&amp;`.
+    static func queryValue(_ name: String, inHref href: String) -> String? {
+        guard let q = href.firstIndex(of: "?") else { return nil }
+        let query = String(href[href.index(after: q)...])
+        return URLComponents(string: "https://x/?" + query)?
+            .queryItems?.first { $0.name == name }?.value
+    }
+
     /// 4-digit group following "ending in" (card last-4), if present.
     static func lastFour(in s: String) -> String? {
         guard let r = s.range(of: "ending in ") else { return nil }
