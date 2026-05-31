@@ -49,10 +49,11 @@ Decisions locked during brainstorming — **design to these; do not reopen**:
 - **One chokepoint.** `App/Telemetry.swift`. It is the *only* file that imports
   `Sentry`. A grep for `import Sentry` or `SentrySDK` returning exactly one file
   is a reviewable invariant (enforced by a test, see Testing).
-- **DSN in the open-source build is intended.** A Sentry DSN is an ingest key,
-  not a secret — it lets anyone *send* events to the project, not read them. We
-  commit the wiring in the open and say so in `SECURITY.md`. Abuse is rate-limit
-  / spam, not a data-leak vector.
+- **DSN is a build-time secret, not committed.** `SENTRY_DSN` is a GitHub Actions
+  repo secret injected into the build at build time (the release workflow writes
+  it into a git-ignored `Config/Secrets.xcconfig`). Open-source checkouts and
+  local `make run` builds have no DSN ⇒ telemetry is disabled (the SDK never
+  starts). Crash reports therefore come only from official notarized releases.
 
 This spec **owns**: telemetry, the Settings scene, the first-run notice,
 `SECURITY.md`, and the README privacy section.
@@ -269,18 +270,19 @@ the alert is the fallback if the banner crowds the idle layout.)
 
 ### `report(_:)` call sites (modify existing error paths)
 
-`Telemetry.report(_:)` is wired into the *already-existing* failure points from
+`Telemetry.report(_:)` is wired into the *already-existing* failure point from
 the GUI spec — it adds a side-channel, it does not change control flow:
 
-- `ExportModel` failure path (`.failed(message:…)`): before/at the point we set
-  `.failed`, call `Telemetry.report(error)` for **unexpected** errors only.
-- **Explicitly excluded** from reporting (these are normal, not bugs, and may
-  carry context): `ExpiredSessionError` (a sign-in bounce), user cancellation
-  (`CancellationError`), and the known Whole Foods blank-detail gap. These are
-  expected outcomes; sending them is noise *and* risks attaching scraped context.
+- `ExportModel` failure path: in the generic `catch` that sets
+  `.failed(message:…)`, call `Telemetry.report(error)`. **Every** error that
+  reaches `.failed` is reported (scrubbed).
+- No exclusion list is needed: the two normal, non-bug outcomes are routed
+  *away* from `.failed` by the existing phase logic — `CancellationError` → `.idle`
+  and `ExpiredSessionError` → `.authenticating` — so they never hit this `catch`.
+  The Whole Foods blank-detail gap doesn't throw at all, so it never reports.
 
-The decision rule lives in `ExportModel` as a small `shouldReport(_:) -> Bool`
-helper so "what we report" is itself readable in one place.
+Unhandled crashes are captured automatically by the SDK (once started); the scrub
+applies to those too.
 
 ## Data flow — what can leave the machine
 
@@ -437,20 +439,19 @@ The README "Privacy & Security" section is a 3–4 line summary of the same: the
 - **iOS / non-mac targets.**
 - **A self-hosted or alternate crash backend.** Sentry only.
 
-## Open questions (for the human)
+## Resolved decisions
 
-1. **DSN provisioning in release builds.** This spec assumes an xcconfig
-   (`Config/Secrets.xcconfig`, value provided at release time / via CI secret).
-   Confirm that's how you want it threaded vs. a checked-in public DSN constant.
-   (Either is fine given "DSN is public-by-design"; xcconfig keeps CI/open
-   checkouts telemetry-free with zero config.)
-2. **Banner vs. alert for the first-run notice.** Designed as a dismissible
-   banner on the idle screen. If you'd rather it be a one-time modal `.alert`,
-   say so — both are spec'd, banner is the default.
-3. **Instant-off.** Are you OK with "toggle takes effect next launch," or do you
-   want the off-transition to call `SentrySDK.close()` immediately? (Adds a
-   little code; everything else is unchanged.)
-4. **`report(_:)` scope.** Confirmed call site is `ExportModel`'s unexpected-error
-   path, excluding expired-session/cancellation/Whole-Foods-gap. Any other
-   "explicit error" you want reported (e.g., a CSV-write failure)? It would just
-   be another `shouldReport`-gated `report(_:)` call.
+1. **DSN = build-time secret.** `SENTRY_DSN` is a GitHub Actions repo secret
+   injected at build time (the release workflow writes it into a git-ignored
+   `Config/Secrets.xcconfig`; `INFOPLIST_KEY_SENTRY_DSN: $(SENTRY_DSN)`). Local &
+   open-source builds have no DSN ⇒ telemetry off. Crash reports come only from
+   official notarized releases — **not** from `make run`.
+2. **First-run notice = dismissible banner** on the idle screen.
+3. **Toggle change → restart to apply.** Settings shows "Quit and reopen Amazon
+   Order Export for this to take effect." No hot `SentrySDK.close()`.
+4. **Report every error that reaches `.failed`.** The export's unexpected-error
+   path reports all of them (scrubbed). Cancellation and expired-session never
+   reach `.failed` (they route to `.idle` / `.authenticating`), so no explicit
+   exclusion list is needed — the `shouldReport` helper is dropped; the Whole
+   Foods gap doesn't throw, so it never reports either. (Unhandled crashes are
+   always captured automatically once the SDK is started.)

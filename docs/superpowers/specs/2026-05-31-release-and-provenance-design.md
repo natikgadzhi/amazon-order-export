@@ -415,18 +415,17 @@ provenance feature). The telemetry spec won't modify About.
 - **Multi-arch / universal concerns beyond what the default archive yields.**
 - **SECURITY.md structure, telemetry, and Sentry** — telemetry spec.
 
-## Open questions for the human
+## Resolved decisions
 
-- **Secrets provisioning.** The five Apple secrets above
-  (`APPLE_DEVELOPER_ID_P12_BASE64`, `APPLE_DEVELOPER_ID_P12_PASSWORD`,
-  `APPLE_NOTARY_API_KEY_BASE64`, `APPLE_NOTARY_API_KEY_ID`,
-  `APPLE_NOTARY_ISSUER_ID`) must be set on the repo. Reuse the Scrapes values
-  (same Apple team `9YKSA5B4FP`) or mint a fresh notary key for this repo?
-- **`CURRENT_PROJECT_VERSION` (build N) source of truth.** Stays a manual bump in
-  `project.yml` (`"1"`), or derive it from the run number / tag? Affects the
-  "(build N)" shown in About.
-- **R2 publish wanted?** If there should be a stable public download URL (not just
-  the GitHub Release asset), the R2 step + its secrets from Scrapes carry over.
-- **Attestation asset.** Publish the `.sigstore` bundle as a release asset too, or
-  rely solely on GitHub's stored attestations (which `gh attestation verify`
-  fetches automatically)? The latter is enough; the asset is belt-and-suspenders.
+- **Apple secrets: reuse Scrapes'.** Same team `9YKSA5B4FP`, same Developer ID
+  cert + notary key. Set the same five secret names on this repo —
+  `APPLE_DEVELOPER_ID_P12_BASE64`, `APPLE_DEVELOPER_ID_P12_PASSWORD`,
+  `APPLE_NOTARY_API_KEY_BASE64`, `APPLE_NOTARY_API_KEY_ID`, `APPLE_NOTARY_ISSUER_ID`.
+- **"build N" = CI run number.** The release workflow passes
+  `CURRENT_PROJECT_VERSION=${{ github.run_number }}` to `xcodebuild` (and to the
+  embed-build-info phase), so About's "(build N)" auto-increments per release run.
+  `project.yml` keeps `"1"` as the local-dev default.
+- **R2 / public download: deferred.** GitHub Release assets only for now; R2 is a
+  follow-up when there's a public landing page.
+- **`.sigstore` asset: skip.** Rely on GitHub's stored attestations (which
+  `gh attestation verify` fetches automatically). Less complexity, same guarantee.
