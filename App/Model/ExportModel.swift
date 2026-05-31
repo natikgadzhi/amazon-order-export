@@ -67,7 +67,14 @@ final class ExportModel {
   }
 
   func cancel() {
+    // Return to idle immediately for instant feedback; the in-flight render
+    // (WKWebView loads aren't interruptible mid-flight) finishes in the
+    // background and its task is discarded. Bumping the run generation makes any
+    // late callbacks from the cancelled run no-ops, so they can't clobber the UI.
+    runGeneration += 1
     exportTask?.cancel()
+    exportTask = nil
+    phase = .idle
   }
 
   func reset() {
@@ -75,9 +82,14 @@ final class ExportModel {
   }
 
   private var exportTask: Task<Void, Never>?
+  /// Identifies the current export run. A cancelled or superseded run keeps its
+  /// (now stale) generation, so its late callbacks are ignored.
+  private var runGeneration = 0
 
   private func startExport() {
-    exportTask?.cancel()  // Cancel any in-flight export before starting a new one.
+    exportTask?.cancel()
+    runGeneration += 1
+    let generation = runGeneration
     guard let outputDir, let secrets = authManager.secrets else {
       phase = .failed(message: "Missing session or output folder.", canReauth: false)
       return
@@ -88,22 +100,30 @@ final class ExportModel {
     // "Exporting…" flash for a dead session.
     phase = .verifying
     exportTask = Task {
+      // Only mutate `phase` if this run is still the current one — a run the
+      // user cancelled keeps rendering briefly, and must not touch the UI.
+      // (`@MainActor` because a nested func is otherwise nonisolated.)
+      @MainActor func commit(_ newPhase: ExportPhase) {
+        guard generation == runGeneration else { return }
+        phase = newPhase
+      }
       do {
         let renderer = await OrderPageRenderer(secrets: secrets)
         let service = ExportService(renderer: renderer)
         let summary = try await service.run(range: range, outputDir: outputDir) { progress in
-          self.phase = .exporting(progress)
+          commit(.exporting(progress))
         }
-        phase = .finished(summary)
+        commit(.finished(summary))
       } catch is CancellationError {
-        phase = .idle
+        commit(.idle)
       } catch is ExpiredSessionError {
+        guard generation == runGeneration else { return }
         // Session is dead — go straight to re-login instead of a dead-end screen.
         authManager.reset()
         phase = .authenticating
         authManager.startLogin()
       } catch {
-        phase = .failed(message: error.localizedDescription, canReauth: false)
+        commit(.failed(message: error.localizedDescription, canReauth: false))
       }
     }
   }
