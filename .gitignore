@@ -17,6 +17,9 @@ Package.resolved
 # XcodeGen output (regenerate with `make generate`)
 *.xcodeproj
 
+# Build-time generated commit SHA (scripts/embed-build-info.sh)
+App/Generated/
+
 # Local config / secrets / exports
 *.local.json
 exports/

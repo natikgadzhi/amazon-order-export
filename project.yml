@@ -29,6 +29,10 @@ targets:
     platform: macOS
     sources:
       - App
+    preBuildScripts:
+      - name: Embed build info
+        script: scripts/embed-build-info.sh
+        basedOnDependencyAnalysis: false
     dependencies:
       - package: AmazonAuth
       - package: AmazonOrders

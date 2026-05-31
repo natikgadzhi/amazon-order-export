@@ -25,6 +25,7 @@ install-hooks:
 	@echo "Configured git hooks to use .githooks/"
 
 generate:
+	scripts/embed-build-info.sh
 	xcodegen generate
 
 format:

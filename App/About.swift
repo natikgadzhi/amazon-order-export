@@ -29,6 +29,24 @@ enum About {
       .paragraphStyle: style,
     ]
     let text = NSMutableAttributedString(string: summary + "\n\n", attributes: base)
+
+    let version =
+      Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+    text.append(
+      NSAttributedString(string: "Version \(version) (build \(build)) · ", attributes: base))
+    if BuildInfo.commitSHA == "unknown" {
+      // Local build with no git provenance — don't claim a commit it can't prove.
+      text.append(NSAttributedString(string: "local build", attributes: base))
+    } else {
+      text.append(
+        linkRun(
+          BuildInfo.commitSHA,
+          repo.appendingPathComponent("commit/\(BuildInfo.commitSHAFull)"),
+          base))
+    }
+    text.append(NSAttributedString(string: "\n\n", attributes: base))
+
     text.append(linkRun("View source on GitHub", repo, base))
     text.append(NSAttributedString(string: "\n", attributes: base))
     text.append(NSAttributedString(string: "Found a bug or have an idea? ", attributes: base))
