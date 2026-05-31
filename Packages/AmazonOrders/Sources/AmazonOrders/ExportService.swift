@@ -14,11 +14,12 @@ public struct ExpiredSessionError: Error {
   public init() {}
 }
 
-/// Coarse progress for the UI. `crawlingDetails` is determinate; `fetchingOrders`
-/// is not (page count is unknown until the pager is walked).
+/// Coarse progress for the UI. `crawlingDetails` is determinate and carries the
+/// order currently being fetched (so the UI can show it); `fetchingOrders` is not
+/// (page count is unknown until the pager is walked).
 public enum ExportProgress: Sendable, Equatable {
   case fetchingOrders(collected: Int)
-  case crawlingDetails(done: Int, total: Int)
+  case crawlingDetails(done: Int, total: Int, current: OrderSummary?)
   case writingFiles
 }
 
@@ -103,20 +104,20 @@ public final class ExportService {
   private func collectDetails(
     orders: [OrderSummary], onProgress: @MainActor (ExportProgress) -> Void
   ) async throws -> [String: OrderDetail] {
-    let targets = orders.compactMap { order -> (String, URL)? in
+    let targets = orders.compactMap { order -> (OrderSummary, URL)? in
       guard let path = order.detailPath, let url = OrdersURL.absolute(path) else { return nil }
-      return (order.id, url)
+      return (order, url)
     }
     var byID: [String: OrderDetail] = [:]
-    for (index, (id, url)) in targets.enumerated() {
+    for (index, (order, url)) in targets.enumerated() {
       try Task.checkCancellation()
-      onProgress(.crawlingDetails(done: index, total: targets.count))
+      onProgress(.crawlingDetails(done: index, total: targets.count, current: order))
       let html = try await renderer.renderedHTML(
         url: url, readySelector: "[data-component=orderId]")
-      byID[id] = try OrderDetailParser.parse(html: html)
+      byID[order.id] = try OrderDetailParser.parse(html: html)
       try? await Task.sleep(for: .milliseconds(400))
     }
-    onProgress(.crawlingDetails(done: targets.count, total: targets.count))
+    onProgress(.crawlingDetails(done: targets.count, total: targets.count, current: nil))
     return byID
   }
 
