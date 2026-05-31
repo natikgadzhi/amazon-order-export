@@ -66,3 +66,10 @@ targets:
         # default, so local `make run` and open-source/CI builds have no DSN and
         # telemetry stays disabled (see App/Telemetry.swift's start() guard).
         SENTRY_DSN: ""
+      configs:
+        # Release-only hardened runtime, so an Xcode/CI Release build matches the
+        # DMG script's `codesign --options runtime`. Debug stays unhardened and
+        # keeps com.apple.security.get-task-allow for debugger attach. Base
+        # signing (Manual / Developer ID / 9YKSA5B4FP) is unchanged.
+        Release:
+          ENABLE_HARDENED_RUNTIME: YES
