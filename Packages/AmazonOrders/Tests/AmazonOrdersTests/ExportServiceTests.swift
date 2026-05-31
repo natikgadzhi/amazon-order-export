@@ -98,4 +98,38 @@ struct ExportServiceTests {
 
     #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("orders.csv").path))
   }
+
+  @Test("a failing detail page is skipped — the export still completes")
+  func skipsFailedDetailPage() async throws {
+    let renderer = ThrowingDetailRenderer(listHTML: try fixture("OrdersList"))
+    let service = ExportService(renderer: renderer)
+    let dir = try tempDir()
+
+    // Every detail render throws, yet run() must not propagate the error.
+    let summary = try await service.run(range: .year(2026), outputDir: dir) { _ in }
+
+    #expect(summary.orderCount > 0)
+    let txns = try String(
+      contentsOf: dir.appendingPathComponent("transactions.csv"), encoding: .utf8)
+    // Header is written; no detail rows since every detail fetch was skipped.
+    #expect(txns.hasPrefix("order_id,date_placed,grand_total"))
+    #expect(!txns.contains(",1119,"))  // the detail-only card last-4 never lands
+  }
+}
+
+/// Returns the orders list but throws on every order-details page, to verify the
+/// crawl skips a bad detail page instead of aborting the whole export.
+@MainActor
+final class ThrowingDetailRenderer: OrderPageRendering {
+  struct DetailFailed: Error {}
+  let listHTML: String
+  init(listHTML: String) { self.listHTML = listHTML }
+
+  func renderedHTML(url: URL, readySelector: String) async throws -> String {
+    if url.absoluteString.contains("order-details") { throw DetailFailed() }
+    let start =
+      URLComponents(url: url, resolvingAgainstBaseURL: false)?
+      .queryItems?.first { $0.name == "startIndex" }?.value
+    return (start == "0" || start == nil) ? listHTML : "<html><body></body></html>"
+  }
 }

@@ -112,9 +112,21 @@ public final class ExportService {
     for (index, (order, url)) in targets.enumerated() {
       try Task.checkCancellation()
       onProgress(.crawlingDetails(done: index, total: targets.count, current: order))
-      let html = try await renderer.renderedHTML(
-        url: url, readySelector: "[data-component=orderId]")
-      byID[order.id] = try OrderDetailParser.parse(html: html)
+      do {
+        let html = try await renderer.renderedHTML(
+          url: url, readySelector: "[data-component=orderId]")
+        byID[order.id] = try OrderDetailParser.parse(html: html)
+      } catch is CancellationError {
+        throw CancellationError()
+      } catch is ExpiredSessionError {
+        // Session died — abort the whole crawl so the app routes to re-login.
+        throw ExpiredSessionError()
+      } catch {
+        // One detail page failed (a stalled/blocked render, a dead WebContent
+        // process, or a Whole Foods `/fopo` layout with no orderId selector).
+        // Skip it and keep going — the order still appears in orders.csv; only
+        // its transactions.csv row is missing.
+      }
       try? await Task.sleep(for: .milliseconds(400))
     }
     onProgress(.crawlingDetails(done: targets.count, total: targets.count, current: nil))
