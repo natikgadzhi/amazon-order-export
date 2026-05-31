@@ -2,6 +2,9 @@
 
 SWIFT_FORMAT_PATHS = App Packages
 YEAR ?= 2026
+# Extra args appended to the xcodebuild line. CI sets this to disable signing
+# (CODE_SIGNING_ALLOWED=NO) since the runner has no Developer ID certs.
+XCODEBUILD_FLAGS ?=
 
 PROJECT = AmazonOrderExport.xcodeproj
 SCHEME = AmazonOrderExport
@@ -36,7 +39,7 @@ test:
 
 build: generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIG) \
-		-derivedDataPath $(DERIVED) build
+		-derivedDataPath $(DERIVED) $(XCODEBUILD_FLAGS) build
 
 # Delete build artifacts. Leaves the generated .xcodeproj (cheap to regenerate).
 clean:
