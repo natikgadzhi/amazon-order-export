@@ -35,7 +35,7 @@ make clean        # remove build artifacts
 
 ## Use
 
-1. `make build`, then `open "$(make where -s | xargs dirname | xargs dirname | xargs dirname)"` — or just double-click the `.app` in Finder.
+1. `make run` — or `make build` then `open .build-xcode/Build/Products/Debug/AmazonOrderExport.app`, or just double-click the `.app` in Finder.
 2. In the window, click **Choose Folder** and pick where the CSVs should land.
 3. Pick a date range: **Last 30 days**, **Past 3 months**, **This year**, or **All time**.
 4. Click **Sign in & Export**. An Amazon sign-in sheet appears; log in normally.

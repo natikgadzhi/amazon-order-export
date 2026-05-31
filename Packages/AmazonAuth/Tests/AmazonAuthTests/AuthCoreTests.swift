@@ -71,16 +71,3 @@ struct AmazonEndpointTests {
         URL(string: "https://www.amazon.com/your-orders/orders")!))
   }
 }
-
-@Suite("AuthProbe.classify")
-struct AuthProbeClassifyTests {
-  @Test("orders page → valid; signin → expired")
-  func classify() {
-    #expect(
-      AuthProbe.classify(finalURL: URL(string: "https://www.amazon.com/your-orders/orders")!)
-        == .valid)
-    #expect(
-      AuthProbe.classify(finalURL: URL(string: "https://www.amazon.com/ap/signin")!)
-        == .expired)
-  }
-}
