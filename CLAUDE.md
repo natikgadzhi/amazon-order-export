@@ -11,9 +11,9 @@ and `docs/superpowers/plans/` for implementation plans.
 - Data model: **transactions-spine** — `/cpe/yourpayments/transactions` is the
   bank-matching source (charge date + amount + card last-4 + order id); orders
   and items join on `orderID`.
-- macOS `.app` (XcodeGen) used as a CLI via swift-argument-parser.
-  `authenticate` shows a window (`.regular`); `check`/`sync` run headless
-  (`.prohibited`) with an offscreen WKWebView.
+- macOS SwiftUI `.app` (XcodeGen), single window. `ExportModel` drives the
+  phase (idle → authenticating → exporting → finished/failed). Login uses a
+  visible WKWebView sheet; scraping uses an offscreen non-persistent WKWebView.
 
 ## Build / test
 - `make generate`  — regenerate the Xcode project from `project.yml`
@@ -23,7 +23,7 @@ and `docs/superpowers/plans/` for implementation plans.
 
 ## Conventions
 - Swift 6 strict concurrency; tests use `import Testing` (`@Suite`/`@Test`/`#expect`), not XCTest.
-- Logic lives in `Packages/`; `App/` is a thin CLI shell.
+- Logic lives in `Packages/`; `App/` is a thin SwiftUI shell.
 - Isolate Amazon DOM selectors in one file — they rot; they get the most tests.
 
 ## Which skill, when

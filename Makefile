@@ -1,6 +1,10 @@
-.PHONY: contrib install-hooks generate format lint-format test build authenticate check
+.PHONY: contrib install-hooks generate format lint-format test build clean where run
 
 SWIFT_FORMAT_PATHS = App Packages
+YEAR ?= 2026
+# Extra args appended to the xcodebuild line. CI sets this to disable signing
+# (CODE_SIGNING_ALLOWED=NO) since the runner has no Developer ID certs.
+XCODEBUILD_FLAGS ?=
 
 PROJECT = AmazonOrderExport.xcodeproj
 SCHEME = AmazonOrderExport
@@ -35,14 +39,16 @@ test:
 
 build: generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIG) \
-		-derivedDataPath $(DERIVED) build
+		-derivedDataPath $(DERIVED) $(XCODEBUILD_FLAGS) build
 
-# Interactive Amazon login. Equivalent to running the app in Xcode (⌘R), which
-# is the most reliable way to see the login page + console logs.
-authenticate: build
-	open -n -W $(APP) --args authenticate
+# Delete build artifacts. Leaves the generated .xcodeproj (cheap to regenerate).
+clean:
+	rm -rf $(DERIVED)
 
-# Headless session check (plain HTTP, no GUI). Leading '-' so a non-zero status
-# (expired/no-session) just prints its message instead of make's error noise.
-check: build
-	-$(BIN) check
+# Print the built binary's path.
+where:
+	@echo $(BIN)
+
+# Build and launch the app.
+run: build
+	open $(APP)

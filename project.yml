@@ -2,16 +2,18 @@ name: AmazonOrderExport
 options:
   bundleIdPrefix: io.respawn
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "26.0"
   createIntermediateGroups: true
 packages:
   AmazonAuth:
     path: Packages/AmazonAuth
   AmazonOrders:
     path: Packages/AmazonOrders
-  ArgumentParser:
-    url: https://github.com/apple/swift-argument-parser
-    from: 1.5.0
+  TelemetryScrub:
+    path: Packages/TelemetryScrub
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa.git
+    from: 8.57.3
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -21,8 +23,8 @@ settings:
 targets:
   AmazonOrderExport:
     # An .app bundle (not a bare tool): WKWebView's WebContent helper process
-    # only launches from inside a real, signed bundle. We still drive it as a CLI
-    # via .app/Contents/MacOS/AmazonOrderExport <subcommand>.
+    # only launches from inside a real, signed bundle. It's a normal windowed
+    # SwiftUI app.
     type: application
     platform: macOS
     sources:
@@ -30,17 +32,33 @@ targets:
     dependencies:
       - package: AmazonAuth
       - package: AmazonOrders
-      - package: ArgumentParser
-        product: ArgumentParser
+      - package: TelemetryScrub
+        product: TelemetryScrub
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
-        GENERATE_INFOPLIST_FILE: YES
-        # Ad-hoc sign for local runs so the WebContent/network XPC services start.
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
-    scheme:
-      # So ⌘R in Xcode runs the login flow (no-arg launch just prints help).
-      # Toggle to `check` in Edit Scheme → Run → Arguments when you want that.
-      commandLineArguments:
-        "authenticate": true
+        # App/Info.plist is a hand-written template with $(VAR) substitutions.
+        # We use INFOPLIST_FILE instead of GENERATE_INFOPLIST_FILE because
+        # GENERATE_INFOPLIST_FILE + INFOPLIST_KEY_* only supports Apple-registered
+        # keys; custom keys like SENTRY_DSN need a real plist template.
+        INFOPLIST_FILE: App/Info.plist
+        # Spaced display name everywhere (menu bar, About panel, Finder).
+        INFOPLIST_KEY_CFBundleDisplayName: Amazon Order Export
+        # Stable code signature, on purpose. macOS keys a Keychain item's
+        # no-prompt access on the app's *designated requirement* (team + bundle
+        # id) for a real identity, but on the per-build cdhash for an ad-hoc
+        # signature. Ad-hoc therefore re-prompts on every rebuild; a Developer ID
+        # signature is stable across rebuilds — and matches the eventual notarized
+        # release, so the stored session survives an app upgrade. The session item
+        # stays app-private (default ACL); other tools must be granted access
+        # explicitly. CI passes CODE_SIGNING_ALLOWED=NO (no certs on the runner).
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Developer ID Application"
+        DEVELOPMENT_TEAM: "9YKSA5B4FP"
+        # Sentry DSN is injected at build time only for official releases:
+        # the release workflow passes SENTRY_DSN=<secret> to xcodebuild. Empty by
+        # default, so local `make run` and open-source/CI builds have no DSN and
+        # telemetry stays disabled (see App/Telemetry.swift's start() guard).
+        SENTRY_DSN: ""

@@ -1,40 +1,39 @@
-import ArgumentParser
-import Foundation
+import AmazonAuth
+import SwiftUI
 
+/// The app: one window over an `ExportModel`. WKWebView (login + scraping) works
+/// because a SwiftUI app already runs an AppKit run loop — no manual shim needed.
 @main
-struct AmazonOrderExport: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "amazon-order-export",
-        abstract: "Export your own Amazon order and transaction history to CSV.",
-        version: "0.1.0",
-        subcommands: [AuthenticateCommand.self, CheckCommand.self])
+struct AmazonOrderExportApp: App {
+  @State private var model: ExportModel
 
-    /// Custom entry point so we can drop the launch arguments Xcode/AppKit inject
-    /// (e.g. `-NSDocumentRevisionsDebugMode YES`, `-ApplePersistenceIgnoreState`),
-    /// which argument-parser would otherwise reject as unknown options.
-    static func main() async {
-        do {
-            var command = try parseAsRoot(userArguments())
-            if var asyncCommand = command as? AsyncParsableCommand {
-                try await asyncCommand.run()
-            } else {
-                try command.run()
-            }
-        } catch {
-            exit(withError: error)
-        }
-    }
+  init() {
+    Telemetry.start()  // no-op unless enabled AND a DSN was baked in (release builds only)
+    _model = State(
+      initialValue: ExportModel(
+        authManager: AmazonAuthManager(secretStore: KeychainAmazonSecretStore())))
+  }
 
-    private static func userArguments() -> [String] {
-        var result: [String] = []
-        var iterator = CommandLine.arguments.dropFirst().makeIterator()
-        while let arg = iterator.next() {
-            if arg.hasPrefix("-NS") || arg.hasPrefix("-Apple") {
-                _ = iterator.next()  // skip the injected option's value
-                continue
-            }
-            result.append(arg)
-        }
-        return result
+  var body: some Scene {
+    Window("Amazon Order Export", id: "main") {
+      RootView(model: model)
+        // Fixed, compact size sized to fit the tallest (idle) screen, with content
+        // pinned top-leading so every screen's heading sits in the same spot.
+        // minHeight is a floor (grows for large Dynamic Type), not a fixed clip.
+        .frame(
+          minWidth: DS.screenWidth, maxWidth: DS.screenWidth, minHeight: 360,
+          alignment: .topLeading)
     }
+    .windowResizability(.contentSize)
+
+    Settings {
+      SettingsView()
+    }
+    .commands {
+      // Replace the stock About item with our branded panel.
+      CommandGroup(replacing: .appInfo) {
+        Button("About Amazon Order Export") { About.showPanel() }
+      }
+    }
+  }
 }
