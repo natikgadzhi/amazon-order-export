@@ -98,14 +98,16 @@ public final class ExportService {
       frontier.append(contentsOf: page.pageStartIndices.filter { !visited.contains($0) })
       // Diagnostic: does Amazon honor this timeFilter? Compare the header count
       // (Amazon's own "N orders") and the pager across last-30 / months-3 / year.
+      // `total` is a local so the (escaping) log autoclosure doesn't capture inout.
+      let total = all.count
+      let pager = page.pageStartIndices.map(String.init).joined(separator: ",")
       log.info(
         """
         fetch timeFilter=\(range.timeFilter ?? "all", privacy: .public) start=\(start): \
         header=\(page.orderCount ?? -1) cards=\(page.orders.count) \
-        pager=\(page.pageStartIndices.map(String.init).joined(separator: ","), privacy: .public) \
-        total=\(all.count)
+        pager=\(pager, privacy: .public) total=\(total)
         """)
-      onProgress(.fetchingOrders(collected: all.count))
+      onProgress(.fetchingOrders(collected: total))
     }
     return rawCount
   }
