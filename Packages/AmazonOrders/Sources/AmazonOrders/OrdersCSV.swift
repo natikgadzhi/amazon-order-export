@@ -37,6 +37,32 @@ public enum OrdersCSV {
         return table(rows)
     }
 
+    /// The bank-reconciliation spine: one row per order joining the list-page date
+    /// to the detail-page grand total + card last-4 + `transactionTag`. Skips orders
+    /// we didn't fetch a detail page for. Date comes from the matching `OrderSummary`.
+    public static func transactionsCSV(orders: [OrderSummary], detailsByID: [String: OrderDetail])
+        -> String
+    {
+        var rows = [
+            [
+                "order_id", "date_placed", "grand_total", "grand_total_raw", "card_last4",
+                "transactions_tag",
+            ]
+        ]
+        for o in orders {
+            guard let d = detailsByID[o.id] else { continue }
+            rows.append([
+                o.id,
+                o.orderPlaced.map(isoDay) ?? o.orderPlacedRaw,
+                d.grandTotal?.amount.map { "\($0)" } ?? "",
+                d.grandTotal?.raw ?? "",
+                d.payment?.lastFour ?? "",
+                d.transactionsTag ?? "",
+            ])
+        }
+        return table(rows)
+    }
+
     // MARK: - CSV mechanics
 
     private static func isoDay(_ date: Date) -> String {

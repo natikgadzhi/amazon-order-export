@@ -33,6 +33,24 @@ struct OrdersCSVTests {
         #expect(csv.contains("112-2809022-2262647,B01HI7WP0U,1,"))
     }
 
+    @Test("transactions.csv: joins list-page date to detail-page total + card last-4")
+    func transactionsCSV() throws {
+        let detailURL = try #require(
+            Bundle.module.url(
+                forResource: "OrderDetail", withExtension: "html", subdirectory: "Fixtures"))
+        let detail = try OrderDetailParser.parse(
+            html: String(contentsOf: detailURL, encoding: .utf8))
+        let csv = OrdersCSV.transactionsCSV(
+            orders: try parsedOrders(), detailsByID: [detail.id!: detail])
+        let row = try #require(
+            csv.split(separator: "\n").first { $0.hasPrefix("112-2809022-2262647,") })
+        // order_id, date_placed(from list), grand_total, raw, card_last4, txn_tag
+        #expect(row.contains("2026-05-24"))
+        #expect(row.contains("29.83"))
+        #expect(row.contains(",1119,"))
+        #expect(row.hasSuffix(",112-2809022-2262647"))
+    }
+
     @Test("fields with commas are quoted (RFC 4180)")
     func quoting() {
         let order = OrderSummary(
