@@ -1,42 +1,18 @@
-import ArgumentParser
-import Foundation
+import AmazonAuth
+import SwiftUI
 
+/// The app: one window over an `ExportModel`. WKWebView (login + scraping) works
+/// because a SwiftUI app already runs an AppKit run loop — no manual shim needed.
 @main
-struct AmazonOrderExport: AsyncParsableCommand {
-  static let configuration = CommandConfiguration(
-    commandName: "amazon-order-export",
-    abstract: "Export your own Amazon order and transaction history to CSV.",
-    version: "0.1.0",
-    subcommands: [
-      AuthenticateCommand.self, CheckCommand.self, SyncCommand.self, DumpOrdersCommand.self,
-    ])
+struct AmazonOrderExportApp: App {
+  @State private var model = ExportModel(
+    authManager: AmazonAuthManager(secretStore: KeychainAmazonSecretStore()))
 
-  /// Custom entry point so we can drop the launch arguments Xcode/AppKit inject
-  /// (e.g. `-NSDocumentRevisionsDebugMode YES`, `-ApplePersistenceIgnoreState`),
-  /// which argument-parser would otherwise reject as unknown options.
-  static func main() async {
-    do {
-      var command = try parseAsRoot(userArguments())
-      if var asyncCommand = command as? AsyncParsableCommand {
-        try await asyncCommand.run()
-      } else {
-        try command.run()
-      }
-    } catch {
-      exit(withError: error)
+  var body: some Scene {
+    Window("Amazon Order Export", id: "main") {
+      RootView(model: model)
+        .frame(minWidth: DS.screenWidth, minHeight: 420)
     }
-  }
-
-  private static func userArguments() -> [String] {
-    var result: [String] = []
-    var iterator = CommandLine.arguments.dropFirst().makeIterator()
-    while let arg = iterator.next() {
-      if arg.hasPrefix("-NS") || arg.hasPrefix("-Apple") {
-        _ = iterator.next()  // skip the injected option's value
-        continue
-      }
-      result.append(arg)
-    }
-    return result
+    .windowResizability(.contentSize)
   }
 }

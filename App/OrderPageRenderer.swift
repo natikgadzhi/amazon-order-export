@@ -37,10 +37,8 @@ final class OrderPageRenderer: NSObject, WKNavigationDelegate {
     }
   }
 
-  struct ExpiredSession: Error {}
-
   /// Load `url`, wait for the page's JS to populate `readySelector`, and return
-  /// `document.documentElement.outerHTML`. Throws `ExpiredSession` if Amazon
+  /// `document.documentElement.outerHTML`. Throws `ExpiredSessionError` if Amazon
   /// bounced us to the sign-in page.
   func renderedHTML(url: URL, readySelector: String, timeout: Duration = .seconds(20))
     async throws -> String
@@ -49,7 +47,7 @@ final class OrderPageRenderer: NSObject, WKNavigationDelegate {
     try await load(url)
 
     if let current = webView.url, AmazonEndpoint.isSignInRedirect(current) {
-      throw ExpiredSession()
+      throw ExpiredSessionError()
     }
 
     let deadline = ContinuousClock.now.advanced(by: timeout)

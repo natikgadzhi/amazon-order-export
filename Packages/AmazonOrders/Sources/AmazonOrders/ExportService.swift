@@ -10,7 +10,9 @@ public protocol OrderPageRendering {
 }
 
 /// Thrown when Amazon bounces a render to the sign-in page (session expired).
-public struct ExpiredSessionError: Error {}
+public struct ExpiredSessionError: Error {
+  public init() {}
+}
 
 /// Coarse progress for the UI. `crawlingDetails` is determinate; `fetchingOrders`
 /// is not (page count is unknown until the pager is walked).
