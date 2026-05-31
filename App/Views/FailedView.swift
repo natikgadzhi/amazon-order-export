@@ -12,7 +12,10 @@ struct FailedView: View {
       Text(message).foregroundStyle(.secondary)
       Button(canReauth ? "Sign in again" : "Back", action: retry)
         .buttonStyle(PrimaryButtonStyle())
+        .keyboardShortcut(.defaultAction)
+        .accessibilityIdentifier("retry-button")
     }
     .screenLayout()
+    .accessibilityIdentifier("failed-screen")
   }
 }

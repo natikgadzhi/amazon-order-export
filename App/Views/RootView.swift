@@ -14,6 +14,8 @@ struct RootView: View {
             Spacer()
             Button("Cancel") { model.reset() }
               .padding(DS.Spacing.tight)
+              .keyboardShortcut(.cancelAction)
+              .accessibilityIdentifier("cancel-login")
           }
           LoginWindowContent(manager: model.authManager) {
             model.didAuthenticate()

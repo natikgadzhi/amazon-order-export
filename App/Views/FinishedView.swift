@@ -18,9 +18,13 @@ struct FinishedView: View {
             summary.outputDir.appendingPathComponent("orders.csv")
           ])
         }
+        .keyboardShortcut(.defaultAction)  // Return reveals the result
+        .accessibilityIdentifier("reveal-in-finder")
         Button("Export Again", action: exportAgain)
+          .accessibilityIdentifier("export-again")
       }
     }
     .screenLayout()
+    .accessibilityIdentifier("finished-screen")
   }
 }

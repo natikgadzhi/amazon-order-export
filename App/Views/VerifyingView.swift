@@ -13,5 +13,6 @@ struct VerifyingView: View {
       }
     }
     .screenLayout()
+    .accessibilityIdentifier("verifying-screen")
   }
 }

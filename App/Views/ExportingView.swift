@@ -19,8 +19,11 @@ struct ExportingView: View {
 
       Button("Cancel", role: .cancel) { cancel() }
         .padding(.top, DS.Spacing.tight)
+        .keyboardShortcut(.cancelAction)  // Esc cancels
+        .accessibilityIdentifier("cancel-export")
     }
     .screenLayout()
+    .accessibilityIdentifier("exporting-screen")
     // Animate on a lightweight token, not the OrderSummary-carrying enum, so
     // SwiftUI doesn't deep-compare the items array on every progress tick.
     .animation(.smooth(duration: 0.3), value: animationKey)

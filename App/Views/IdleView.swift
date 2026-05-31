@@ -25,12 +25,17 @@ struct IdleView: View {
         Text("All time").tag(TimeRange.allTime)
       }
       .pickerStyle(.menu)
+      .accessibilityLabel("Export date range")
+      .accessibilityIdentifier("range-picker")
 
       Button(buttonTitle) { model.authenticateAndExport() }
         .buttonStyle(PrimaryButtonStyle())
         .disabled(model.outputDir == nil)
+        .keyboardShortcut(.defaultAction)  // Return triggers Export
+        .accessibilityIdentifier("export-button")
     }
     .screenLayout()
+    .accessibilityIdentifier("idle-screen")
   }
 
   private var buttonTitle: String {
@@ -39,12 +44,17 @@ struct IdleView: View {
 
   private var folderRow: some View {
     HStack(spacing: DS.Spacing.tight) {
-      Image(systemName: "folder")
+      Image(systemName: "folder").accessibilityHidden(true)
       Text(model.outputDir?.path ?? "No folder chosen")
         .foregroundStyle(model.outputDir == nil ? .secondary : .primary)
         .lineLimit(1).truncationMode(.middle)
+        .accessibilityLabel("Output folder")
+        .accessibilityValue(model.outputDir?.path ?? "None chosen")
+        .accessibilityIdentifier("output-folder-path")
       Spacer()
       Button("Choose…") { chooseFolder() }
+        .accessibilityLabel("Choose output folder")
+        .accessibilityIdentifier("choose-folder")
     }
   }
 
