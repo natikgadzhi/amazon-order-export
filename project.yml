@@ -48,6 +48,8 @@ targets:
         # GENERATE_INFOPLIST_FILE + INFOPLIST_KEY_* only supports Apple-registered
         # keys; custom keys like SENTRY_DSN need a real plist template.
         INFOPLIST_FILE: App/Info.plist
+        # App icon from App/Assets.xcassets/AppIcon.appiconset (macOS sizes).
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Spaced display name everywhere (menu bar, About panel, Finder).
         INFOPLIST_KEY_CFBundleDisplayName: Amazon Order Export
         # Stable code signature, on purpose. macOS keys a Keychain item's
