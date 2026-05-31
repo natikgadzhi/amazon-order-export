@@ -1,7 +1,5 @@
 name: CI
 
-# Lint, test, and build on every push and PR. Runs on macOS because the code
-# uses AppKit/Security/WKWebView and is built as an .app bundle via Xcode.
 on:
   push:
   pull_request:
@@ -12,7 +10,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # TEMP: the full lint/test/build job is disabled to save GitHub Actions minutes
+  # (macOS runners bill at 10x). Re-enable before release by removing `if: false`.
   build-and-test:
+    if: ${{ false }}
     name: Lint, test, build
     runs-on: macos-26
     steps:
@@ -23,28 +24,29 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      # xcodegen drives the project; swift-format enforces style. Both come from
-      # Homebrew (preinstalled on the runner). swift-format is unpinned, so a
-      # brew version that differs from a contributor's local one could disagree
-      # on `lint --strict`; pin a tag here if that ever bites.
       - name: Install xcodegen and swift-format
         run: brew install xcodegen swift-format
 
       - name: Lint formatting
         run: make lint-format
 
-      - name: Telemetry chokepoint (only Telemetry.swift may import Sentry)
+      - name: Run package tests
+        run: make test
+
+      - name: Build the app (unsigned)
+        run: make build XCODEBUILD_FLAGS="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
+
+  # Cheap (ubuntu, ~seconds) security invariant that stays on while the macOS job
+  # is paused: the crash-reporting SDK must stay confined to one auditable file.
+  telemetry-chokepoint:
+    name: Telemetry chokepoint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Only Telemetry.swift may import Sentry
         run: |
           offenders=$(grep -rl "import Sentry" App | grep -vx "App/Telemetry.swift" || true)
           if [ -n "$offenders" ]; then
             echo "::error::Sentry imported outside App/Telemetry.swift:"; echo "$offenders"; exit 1
           fi
           echo "OK: Sentry is confined to App/Telemetry.swift"
-
-      - name: Run package tests
-        run: make test
-
-      # No Developer ID certs on the runner, so build unsigned. This only proves
-      # the App/ target compiles and links; the logic is covered by `make test`.
-      - name: Build the app (unsigned)
-        run: make build XCODEBUILD_FLAGS="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
