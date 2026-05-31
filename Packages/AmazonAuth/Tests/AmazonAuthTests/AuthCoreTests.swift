@@ -28,15 +28,15 @@ struct AmazonCookiesTests {
 
 @Suite("AmazonSessionSecrets")
 struct AmazonSessionSecretsTests {
-    @Test("secure-coding archive round-trip preserves cookies")
+    @Test("json round-trip preserves cookie names and values")
     func roundTrip() throws {
-        let secrets = AmazonSessionSecrets(cookies: [cookie("session-id"), cookie("at-main")])
-        let data = try NSKeyedArchiver.archivedData(
-            withRootObject: secrets, requiringSecureCoding: true)
-        let restored = try #require(
-            try NSKeyedUnarchiver.unarchivedObject(
-                ofClass: AmazonSessionSecrets.self, from: data))
+        let secrets = AmazonSessionSecrets(cookies: [
+            cookie("session-id", value: "abc"), cookie("at-main", value: "xyz"),
+        ])
+        let data = try secrets.encoded()
+        let restored = try AmazonSessionSecrets.decoded(from: data)
         #expect(Set(restored.cookies.map(\.name)) == ["session-id", "at-main"])
+        #expect(restored.cookies.first { $0.name == "at-main" }?.value == "xyz")
     }
 }
 

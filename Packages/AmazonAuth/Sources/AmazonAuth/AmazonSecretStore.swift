@@ -26,10 +26,16 @@ public final class InMemoryAmazonSecretStore: AmazonSecretStoring, @unchecked Se
 /// item first to avoid duplicates.
 public final class KeychainAmazonSecretStore: AmazonSecretStoring, @unchecked Sendable {
     public static let defaultServiceName = "io.respawn.AmazonOrderExport"
+    public static let defaultAccount = "amazon-session"
     private let serviceName: String
+    private let account: String
 
-    public init(serviceName: String = KeychainAmazonSecretStore.defaultServiceName) {
+    public init(
+        serviceName: String = KeychainAmazonSecretStore.defaultServiceName,
+        account: String = KeychainAmazonSecretStore.defaultAccount
+    ) {
         self.serviceName = serviceName
+        self.account = account
     }
 
     public func read() -> AmazonSessionSecrets? {
@@ -42,17 +48,11 @@ public final class KeychainAmazonSecretStore: AmazonSecretStoring, @unchecked Se
         else {
             return nil
         }
-        return try? NSKeyedUnarchiver.unarchivedObject(
-            ofClass: AmazonSessionSecrets.self, from: data)
+        return try? AmazonSessionSecrets.decoded(from: data)
     }
 
     public func write(secrets: AmazonSessionSecrets) {
-        guard
-            let data = try? NSKeyedArchiver.archivedData(
-                withRootObject: secrets, requiringSecureCoding: true)
-        else {
-            return
-        }
+        guard let data = try? secrets.encoded() else { return }
         var query = baseQuery()
         SecItemDelete(query as CFDictionary)
         query[kSecValueData] = data
@@ -64,6 +64,9 @@ public final class KeychainAmazonSecretStore: AmazonSecretStoring, @unchecked Se
     }
 
     private func baseQuery() -> [CFString: Any] {
-        [kSecClass: kSecClassGenericPassword, kSecAttrService: serviceName]
+        [
+            kSecClass: kSecClassGenericPassword, kSecAttrService: serviceName,
+            kSecAttrAccount: account,
+        ]
     }
 }
