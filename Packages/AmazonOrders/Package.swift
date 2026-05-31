@@ -13,7 +13,11 @@ let package = Package(
     ],
     targets: [
         .target(name: "AmazonOrders", dependencies: ["SwiftSoup"]),
-        .testTarget(name: "AmazonOrdersTests", dependencies: ["AmazonOrders"]),
+        .testTarget(
+            name: "AmazonOrdersTests",
+            dependencies: ["AmazonOrders"],
+            resources: [.copy("Fixtures")]
+        ),
     ],
     swiftLanguageModes: [.v6]
 )
