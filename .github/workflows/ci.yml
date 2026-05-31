@@ -33,6 +33,14 @@ jobs:
       - name: Lint formatting
         run: make lint-format
 
+      - name: Telemetry chokepoint (only Telemetry.swift may import Sentry)
+        run: |
+          offenders=$(grep -rl "import Sentry" App | grep -vx "App/Telemetry.swift" || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::Sentry imported outside App/Telemetry.swift:"; echo "$offenders"; exit 1
+          fi
+          echo "OK: Sentry is confined to App/Telemetry.swift"
+
       - name: Run package tests
         run: make test
 

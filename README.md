@@ -23,6 +23,16 @@ process requires one). It's built with SwiftUI; the scraping + CSV logic lives i
 `Packages/` (unit-tested against PII-scrubbed HTML fixtures) and `App/` is a thin
 SwiftUI shell over it.
 
+## Privacy & Security
+
+Your data stays on your Mac. The tool talks to **amazon.com** (your own session,
+to render your own order pages) and writes the CSVs locally — orders, items,
+transactions, cookies, and the Keychain session never leave your machine.
+Official releases can send **opt-out, anonymous crash reports** (scrubbed stack
+traces only, no orders or identifiers) via Sentry; local/source builds never do.
+Turn it off in **Settings** (⌘,) → "Send anonymous crash reports." Full details,
+the exact egress table, and how to verify a build: [`SECURITY.md`](SECURITY.md).
+
 ## Build
 
 Requires Xcode 26, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
