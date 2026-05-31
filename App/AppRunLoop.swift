@@ -24,4 +24,19 @@ enum AppRunLoop {
         manager.startLogin()
         app.run()
     }
+
+    /// Run an async body inside an AppKit run loop with **no** UI (`.prohibited`),
+    /// then quit. WKWebView's render process still needs a live run loop even when
+    /// the view is offscreen, which is why `sync`/`dump-orders` can't be plain
+    /// async commands the way `check` is.
+    @MainActor
+    static func runHeadless(_ body: @escaping @MainActor () async -> Void) {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.prohibited)
+        Task { @MainActor in
+            await body()
+            NSApplication.shared.terminate(nil)
+        }
+        app.run()
+    }
 }

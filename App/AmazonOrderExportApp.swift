@@ -7,7 +7,9 @@ struct AmazonOrderExport: AsyncParsableCommand {
         commandName: "amazon-order-export",
         abstract: "Export your own Amazon order and transaction history to CSV.",
         version: "0.1.0",
-        subcommands: [AuthenticateCommand.self, CheckCommand.self])
+        subcommands: [
+            AuthenticateCommand.self, CheckCommand.self, SyncCommand.self, DumpOrdersCommand.self,
+        ])
 
     /// Custom entry point so we can drop the launch arguments Xcode/AppKit inject
     /// (e.g. `-NSDocumentRevisionsDebugMode YES`, `-ApplePersistenceIgnoreState`),

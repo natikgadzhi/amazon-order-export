@@ -24,3 +24,6 @@ exports/
 
 # Fixed xcodebuild output
 .build-xcode/
+
+# Raw captured Amazon HTML (contains PII) — scrub before committing as fixtures
+fixtures-raw/

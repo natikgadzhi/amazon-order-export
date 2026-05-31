@@ -1,6 +1,7 @@
-.PHONY: contrib install-hooks generate format lint-format test build authenticate check
+.PHONY: contrib install-hooks generate format lint-format test build authenticate check sync dump
 
 SWIFT_FORMAT_PATHS = App Packages
+YEAR ?= 2026
 
 PROJECT = AmazonOrderExport.xcodeproj
 SCHEME = AmazonOrderExport
@@ -46,3 +47,12 @@ authenticate: build
 # (expired/no-session) just prints its message instead of make's error noise.
 check: build
 	-$(BIN) check
+
+# Export a year's orders to ./orders.csv + ./items.csv (headless, needs a session).
+sync: build
+	-$(BIN) sync --year $(YEAR) --out .
+
+# Capture one rendered orders page to fixtures-raw/ (gitignored — raw HTML is PII).
+dump: build
+	@mkdir -p fixtures-raw
+	-$(BIN) dump-orders --year $(YEAR) --out fixtures-raw/orders-$(YEAR).html
