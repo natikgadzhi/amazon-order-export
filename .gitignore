@@ -21,3 +21,6 @@ Package.resolved
 *.local.json
 exports/
 *.csv
+
+# Fixed xcodebuild output
+.build-xcode/

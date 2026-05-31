@@ -20,6 +20,5 @@ struct LoginWindowContent: View {
             .onChange(of: manager.state) { _, newValue in
                 if newValue == .authenticated { onAuthenticated() }
             }
-            .onAppear { manager.startLogin() }
     }
 }

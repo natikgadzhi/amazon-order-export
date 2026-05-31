@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WebKit
+import os
 
 /// Coordinates the interactive login: owns the `WKWebView` the user signs into,
 /// and snapshots the session cookies once they're all present.
@@ -12,6 +13,7 @@ import WebKit
 @MainActor @Observable
 public final class AmazonAuthManager: NSObject {
     private let secretStore: any AmazonSecretStoring
+    private let log = Logger(subsystem: "io.respawn.AmazonOrderExport", category: "auth")
 
     public private(set) var state: AuthenticationState = .new
     public private(set) var secrets: AmazonSessionSecrets?
@@ -38,8 +40,10 @@ public final class AmazonAuthManager: NSObject {
     /// Start login by loading the orders page; Amazon redirects to sign-in if the
     /// user isn't authenticated yet.
     public func startLogin() {
+        let url = AmazonEndpoint.orders.url
+        log.info("startLogin: loading \(url.absoluteString, privacy: .public)")
         state = .authenticating
-        loginWebView.load(URLRequest(url: AmazonEndpoint.orders.url))
+        loginWebView.load(URLRequest(url: url))
     }
 
     /// Single capture point — persists only when the full required cookie set is
@@ -71,9 +75,39 @@ public final class AmazonAuthManager: NSObject {
 }
 
 extension AmazonAuthManager: WKNavigationDelegate {
+    public func webView(
+        _ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!
+    ) {
+        log.info("didStart: \(webView.url?.absoluteString ?? "<nil>", privacy: .public)")
+    }
+
+    public func webView(
+        _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!,
+        withError error: Error
+    ) {
+        log.error("didFailProvisional: \(error.localizedDescription, privacy: .public)")
+    }
+
+    public func webView(
+        _ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error
+    ) {
+        log.error("didFail: \(error.localizedDescription, privacy: .public)")
+    }
+
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        log.info("didFinish: \(webView.url?.absoluteString ?? "<nil>", privacy: .public)")
+    }
+
+    /// The web content process crashing is the classic "blank page" cause — log it
+    /// loudly so we can tell it apart from a network/navigation failure.
+    public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        log.error("webContentProcessDidTerminate — WKWebView render process died")
+    }
+
     /// After each navigation commit, peek at the cookie store; `ingest` no-ops
     /// until all required cookies have landed (post-2FA), then persists once.
     public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        log.info("didCommit: \(webView.url?.absoluteString ?? "<nil>", privacy: .public)")
         guard state != .authenticated else { return }
         webView.configuration.websiteDataStore.httpCookieStore.getAllCookies {
             [weak self] cookies in
