@@ -36,9 +36,17 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.respawn.AmazonOrderExport
         GENERATE_INFOPLIST_FILE: YES
-        # Ad-hoc sign for local runs so the WebContent/network XPC services start.
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
+        # Stable code signature, on purpose. macOS keys a Keychain item's
+        # no-prompt access on the app's *designated requirement* (team + bundle
+        # id) for a real identity, but on the per-build cdhash for an ad-hoc
+        # signature. Ad-hoc therefore re-prompts on every rebuild; a Developer ID
+        # signature is stable across rebuilds — and matches the eventual notarized
+        # release, so the stored session survives an app upgrade. The session item
+        # stays app-private (default ACL); other tools must be granted access
+        # explicitly. CI passes CODE_SIGNING_ALLOWED=NO (no certs on the runner).
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Developer ID Application"
+        DEVELOPMENT_TEAM: "9YKSA5B4FP"
     scheme:
       # So ⌘R in Xcode runs the login flow (no-arg launch just prints help).
       # Toggle to `check` in Edit Scheme → Run → Arguments when you want that.
