@@ -13,7 +13,8 @@ struct CrashReportingNotice: View {
             .font(.callout)
           Text("Turn off in Settings (⌘,).").font(.caption).foregroundStyle(.secondary)
         }
-        Spacer()
+        .fixedSize(horizontal: false, vertical: true)  // wrap, don't truncate
+        Spacer(minLength: DS.Spacing.tight)
         Button("Got it") { seen = true }
       }
       .padding(DS.Spacing.standard)
