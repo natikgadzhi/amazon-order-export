@@ -1,4 +1,4 @@
-.PHONY: contrib install-hooks generate format lint-format test build clean where run
+.PHONY: contrib install-hooks generate format lint-format test build clean where install run
 
 SWIFT_FORMAT_PATHS = App Packages
 YEAR ?= 2026
@@ -13,6 +13,12 @@ CONFIG = Debug
 DERIVED = .build-xcode
 APP = $(DERIVED)/Build/Products/$(CONFIG)/AmazonOrderExport.app
 BIN = $(APP)/Contents/MacOS/AmazonOrderExport
+
+# Where `make install` puts the app. /Applications is a stable, LaunchServices-
+# registered location (override e.g. INSTALL_DIR=~/Applications if needed).
+INSTALL_DIR ?= /Applications
+INSTALLED = $(INSTALL_DIR)/Amazon Order Export.app
+LSREGISTER = /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister
 
 contrib:
 	@echo "Installing development dependencies..."
@@ -37,6 +43,7 @@ lint-format:
 test:
 	swift test --package-path Packages/AmazonAuth
 	swift test --package-path Packages/AmazonOrders
+	swift test --package-path Packages/TelemetryScrub
 
 build: generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIG) \
@@ -50,6 +57,16 @@ clean:
 where:
 	@echo $(BIN)
 
-# Build and launch the app.
-run: build
-	open $(APP)
+# Build and install into INSTALL_DIR, registering with LaunchServices so the
+# icon shows in the Dock and Cmd-Tab switcher (a transient DerivedData bundle
+# often shows a generic icon). Quits any running instance first for a clean swap.
+install: build
+	@killall AmazonOrderExport >/dev/null 2>&1 || true
+	rm -rf "$(INSTALLED)"
+	ditto "$(APP)" "$(INSTALLED)"
+	-"$(LSREGISTER)" -f "$(INSTALLED)"
+	@echo "Installed → $(INSTALLED)"
+
+# Build, install, and launch.
+run: install
+	open "$(INSTALLED)"
