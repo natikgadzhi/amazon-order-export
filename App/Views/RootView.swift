@@ -32,6 +32,8 @@ struct RootView: View {
     switch model.phase {
     case .idle:
       IdleView(model: model)
+    case .verifying:
+      VerifyingView()
     case .authenticating:
       // The sheet is up; keep the idle screen behind it.
       IdleView(model: model)

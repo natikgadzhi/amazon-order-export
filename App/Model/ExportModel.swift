@@ -6,6 +6,7 @@ import Observation
 /// What the single window is currently showing.
 enum ExportPhase: Equatable {
   case idle
+  case verifying  // checking the stored session before committing to the export UI
   case authenticating
   case exporting(ExportProgress)
   case finished(ExportSummary)
@@ -81,7 +82,11 @@ final class ExportModel {
       phase = .failed(message: "Missing session or output folder.", canReauth: false)
       return
     }
-    phase = .exporting(.fetchingOrders(collected: 0))
+    // Start in `.verifying`: the first page render either succeeds (the first
+    // progress event flips us to `.exporting`) or throws `ExpiredSessionError`,
+    // which routes straight to the login sheet — so the user never sees an
+    // "Exporting…" flash for a dead session.
+    phase = .verifying
     exportTask = Task {
       do {
         let renderer = await OrderPageRenderer(secrets: secrets)
@@ -93,8 +98,10 @@ final class ExportModel {
       } catch is CancellationError {
         phase = .idle
       } catch is ExpiredSessionError {
+        // Session is dead — go straight to re-login instead of a dead-end screen.
         authManager.reset()
-        phase = .failed(message: "Your Amazon session expired.", canReauth: true)
+        phase = .authenticating
+        authManager.startLogin()
       } catch {
         phase = .failed(message: error.localizedDescription, canReauth: false)
       }
