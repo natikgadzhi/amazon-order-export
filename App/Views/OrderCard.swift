@@ -11,6 +11,7 @@ struct OrderCard: View {
       Image(systemName: "shippingbox.fill")
         .font(.title2)
         .foregroundStyle(.tint)
+        .accessibilityHidden(true)  // decorative
       VStack(alignment: .leading, spacing: 2) {
         Text(title)
           .font(.body.weight(.medium))
@@ -30,8 +31,18 @@ struct OrderCard: View {
     .padding(DS.Spacing.standard)
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(
-      .quaternary.opacity(0.4),
-      in: RoundedRectangle(cornerRadius: DS.cornerRadius, style: .continuous))
+      .quaternary, in: RoundedRectangle(cornerRadius: DS.cornerRadius, style: .continuous)
+    )
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(accessibilityLabel)
+  }
+
+  /// One spoken phrase for the whole card, so VoiceOver doesn't read it as
+  /// three disconnected fragments.
+  private var accessibilityLabel: String {
+    var parts = [title, subtitle]
+    if let total = order.total?.raw { parts.append(total) }
+    return parts.joined(separator: ", ")
   }
 
   /// Prefer the first item's title; fall back to a short order number.

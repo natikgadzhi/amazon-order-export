@@ -7,6 +7,8 @@ struct ExportingView: View {
   let progress: ExportProgress
   let cancel: () -> Void
 
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   var body: some View {
     VStack(alignment: .leading, spacing: DS.Spacing.loose) {
       Text(title)
@@ -19,9 +21,19 @@ struct ExportingView: View {
         .padding(.top, DS.Spacing.tight)
     }
     .screenLayout()
-    // One animation drives everything: the title crossfade, the numeric
-    // counters, and the order card sliding in/out as `progress` changes.
-    .animation(.smooth(duration: 0.3), value: progress)
+    // Animate on a lightweight token, not the OrderSummary-carrying enum, so
+    // SwiftUI doesn't deep-compare the items array on every progress tick.
+    .animation(.smooth(duration: 0.3), value: animationKey)
+  }
+
+  /// Cheap identity for the animation — exactly what changes visibly each tick.
+  private var animationKey: String {
+    switch progress {
+    case .fetchingOrders(let collected): "f\(collected)"
+    case .crawlingDetails(let done, let total, let current):
+      "c\(done)/\(total)/\(current?.id ?? "")"
+    case .writingFiles: "w"
+    }
   }
 
   private var title: String {
@@ -45,10 +57,13 @@ struct ExportingView: View {
     case .crawlingDetails(let done, let total, let current):
       VStack(alignment: .leading, spacing: DS.Spacing.standard) {
         ProgressView(value: Double(done), total: Double(max(total, 1)))
+          .accessibilityLabel("Export progress")
+          .accessibilityValue("Order \(done) of \(total)")
         Text("Order \(done) of \(total)")
           .font(.callout)
           .foregroundStyle(.secondary)
           .contentTransition(.numericText())
+          .accessibilityHidden(true)  // the bar already announces this
         ticker(current)
       }
 
@@ -62,20 +77,24 @@ struct ExportingView: View {
 
   /// The current order, sliding in from the trailing edge and out the leading
   /// edge as it changes. Re-keyed by order id so SwiftUI treats each as a new
-  /// view and runs the transition.
+  /// view and runs the transition. The slide is replaced by a plain crossfade
+  /// when Reduce Motion is on.
   @ViewBuilder private func ticker(_ order: OrderSummary?) -> some View {
     ZStack(alignment: .leading) {
       if let order {
         OrderCard(order: order)
           .id(order.id)
           .transition(
-            .asymmetric(
-              insertion: .move(edge: .trailing).combined(with: .opacity),
-              removal: .move(edge: .leading).combined(with: .opacity)))
+            reduceMotion
+              ? .opacity
+              : .asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)))
       }
     }
-    .frame(height: 60)
-    .frame(maxWidth: .infinity, alignment: .leading)
+    // minHeight (not a fixed height) so the card isn't clipped at large Dynamic
+    // Type sizes; clip keeps the horizontal slide tidy within the row.
+    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
     .clipped()
   }
 }
