@@ -123,6 +123,9 @@ public final class ExportService {
   private func write(
     orders: [OrderSummary], details: [String: OrderDetail], to dir: URL
   ) throws {
+    // Create the destination (e.g. the default ~/Desktop/amazon-orders) if it
+    // doesn't exist yet. Idempotent — no-op when the folder is already there.
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     try OrdersCSV.ordersCSV(orders).write(
       to: dir.appendingPathComponent("orders.csv"), atomically: true, encoding: .utf8)
     try OrdersCSV.itemsCSV(orders).write(

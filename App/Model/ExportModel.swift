@@ -35,6 +35,10 @@ final class ExportModel {
     self.range = .year(Calendar.current.component(.year, from: Date()))
     if let path = UserDefaults.standard.string(forKey: Self.outputDirKey) {
       self.outputDir = URL(fileURLWithPath: path, isDirectory: true)
+    } else {
+      // Default destination; created at export time if it doesn't exist yet.
+      self.outputDir = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Desktop/amazon-orders", isDirectory: true)
     }
     authManager.initSessionFromSecureStorage()
   }

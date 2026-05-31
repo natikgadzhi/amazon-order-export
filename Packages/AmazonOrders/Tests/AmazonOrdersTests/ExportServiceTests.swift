@@ -83,4 +83,19 @@ struct ExportServiceTests {
     // Cancellation happens before write(), so no files should exist.
     #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("orders.csv").path))
   }
+
+  @Test("creates the output directory when it doesn't exist yet")
+  func createsOutputDirectory() async throws {
+    let renderer = StubRenderer(
+      listHTML: try fixture("OrdersList"), detailHTML: try fixture("OrderDetail"))
+    let service = ExportService(renderer: renderer)
+    // A not-yet-existing nested path, like the default ~/Desktop/amazon-orders.
+    let dir = FileManager.default.temporaryDirectory
+      .appendingPathComponent("aox-test-\(UUID().uuidString)/amazon-orders", isDirectory: true)
+    #expect(!FileManager.default.fileExists(atPath: dir.path))
+
+    _ = try await service.run(range: .year(2026), outputDir: dir) { _ in }
+
+    #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("orders.csv").path))
+  }
 }

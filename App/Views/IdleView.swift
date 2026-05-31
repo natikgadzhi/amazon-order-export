@@ -53,6 +53,8 @@ struct IdleView: View {
     panel.canChooseDirectories = true
     panel.canChooseFiles = false
     panel.allowsMultipleSelection = false
+    panel.canCreateDirectories = true  // shows the "New Folder" button
+    panel.directoryURL = model.outputDir  // start where we'll export to
     if panel.runModal() == .OK, let url = panel.url {
       model.setOutputDir(url)
     }
