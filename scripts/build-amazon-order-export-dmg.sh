@@ -8,7 +8,16 @@ ARCHIVE_PATH="${ARCHIVE_PATH:-build/AmazonOrderExport.xcarchive}"
 EXPORT_DIR="${EXPORT_DIR:-build/export}"
 RELEASE_DIR="${RELEASE_DIR:-build/release}"
 DMG_STAGING_DIR="${DMG_STAGING_DIR:-build/dmg}"
-# Spaced display name, matching CFBundleDisplayName / INFOPLIST_KEY_CFBundleDisplayName.
+# The .app as xcodebuild produces it. No PRODUCT_NAME is set in project.yml, so
+# it defaults to the target name (AmazonOrderExport — space-free, on purpose:
+# the Makefile's static paths, the About panel, and Sentry all use this binary
+# name). The archived product is therefore "AmazonOrderExport.app".
+ARCHIVE_APP_NAME="${ARCHIVE_APP_NAME:-AmazonOrderExport.app}"
+# Pretty, spaced name used INSIDE the DMG and by the Homebrew cask — matches
+# CFBundleDisplayName and what `make install` copies to /Applications. We rename
+# the bundle directory on the way into the DMG; a bundle's directory name is
+# independent of its executable/bundle id, so signing/notarization are unaffected
+# (this is exactly what `make install`'s ditto rename does).
 APP_NAME="${APP_NAME:-Amazon Order Export.app}"
 # Keep the DMG (and therefore the published asset) name space-free even though
 # the app's display name has spaces. GitHub rewrites spaces in asset names to
@@ -207,8 +216,11 @@ archive_app() {
     archive \
     -archivePath "${ARCHIVE_PATH}"
 
+  # Copy the archived product (AmazonOrderExport.app) into the export dir under
+  # its pretty, spaced name. Mirrors `make install`'s ditto rename; every step
+  # downstream (sign, DMG, cask) then operates on the spaced APP_NAME.
   ditto \
-    "${ARCHIVE_PATH}/Products/Applications/${APP_NAME}" \
+    "${ARCHIVE_PATH}/Products/Applications/${ARCHIVE_APP_NAME}" \
     "${EXPORT_DIR}/${APP_NAME}"
 
   resolve_release_metadata
