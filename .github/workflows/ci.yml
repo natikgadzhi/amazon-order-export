@@ -10,8 +10,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # TEMP: the full lint/test/build job is disabled to save GitHub Actions minutes
-  # (macOS runners bill at 10x). Re-enable before release by removing `if: false`.
+  # Disabled on push/PR to save GitHub Actions minutes (macOS runners bill at
+  # 10x). The same lint/test/build gate still runs on every tagged release as a
+  # required job in release.yml, so nothing ships unlinted, untested, or broken.
+  # Flip this `if:` to true to also run the full gate on every push.
   build-and-test:
     if: ${{ false }}
     name: Lint, test, build
@@ -36,8 +38,9 @@ jobs:
       - name: Build the app (unsigned)
         run: make build XCODEBUILD_FLAGS="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
 
-  # Cheap (ubuntu, ~seconds) security invariant that stays on while the macOS job
-  # is paused: the crash-reporting SDK must stay confined to one auditable file.
+  # Cheap (ubuntu, ~seconds) security invariant that stays on even while the macOS
+  # build-and-test job is paused: the crash-reporting SDK must stay confined to
+  # one auditable file.
   telemetry-chokepoint:
     name: Telemetry chokepoint
     runs-on: ubuntu-latest
