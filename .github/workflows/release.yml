@@ -55,7 +55,16 @@ jobs:
           echo "path=${dmg_path}" >> "$GITHUB_OUTPUT"
 
       - name: Checksum
-        run: shasum -a 256 "${{ steps.dmg.outputs.path }}" | tee "${{ steps.dmg.outputs.path }}.sha256"
+        id: checksum
+        shell: bash
+        run: |
+          dmg_path="${{ steps.dmg.outputs.path }}"
+          # Write the checksum with just the basename (not the build/release/…
+          # path) so `shasum -a 256 -c AmazonOrderExport-*.dmg.sha256` verifies
+          # the downloaded file directly.
+          ( cd "$(dirname "${dmg_path}")" && shasum -a 256 "$(basename "${dmg_path}")" ) \
+            | tee "${dmg_path}.sha256"
+          echo "sha256=$(shasum -a 256 "${dmg_path}" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v1
@@ -70,3 +79,64 @@ jobs:
             ${{ steps.dmg.outputs.path }}
             ${{ steps.dmg.outputs.path }}.sha256
           generate_release_notes: true
+          body: |
+            ### Verifying this build
+
+            **SHA-256:** `${{ steps.checksum.outputs.sha256 }}`
+
+            ```sh
+            shasum -a 256 AmazonOrderExport*.dmg            # matches the hash above
+            gh attestation verify AmazonOrderExport*.dmg --repo natikgadzhi/amazon-order-export
+            ```
+
+            The running app's About panel shows the commit it was built from. See
+            [SECURITY.md](https://github.com/natikgadzhi/amazon-order-export/blob/main/SECURITY.md).
+
+      - name: Check out the Homebrew tap
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v4
+        with:
+          repository: natikgadzhi/homebrew-taps
+          token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          path: tap
+
+      - name: Regenerate and push the cask
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          SHA256: ${{ steps.checksum.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          cat > tap/Casks/amazon-order-export.rb <<EOF
+          # This file is updated by the amazon-order-export release workflow. DO NOT EDIT.
+          cask "amazon-order-export" do
+            version "${version}"
+            sha256 "${SHA256}"
+
+            url "https://github.com/natikgadzhi/amazon-order-export/releases/download/v#{version}/AmazonOrderExport-#{version}.dmg",
+                verified: "github.com/natikgadzhi/amazon-order-export/"
+            name "Amazon Order Export"
+            desc "Exports your own Amazon order and transaction history to CSV"
+            homepage "https://github.com/natikgadzhi/amazon-order-export"
+
+            depends_on macos: ">= :tahoe"
+
+            app "Amazon Order Export.app"
+
+            zap trash: [
+              "~/Library/Caches/io.respawn.AmazonOrderExport",
+              "~/Library/Preferences/io.respawn.AmazonOrderExport.plist",
+              "~/Library/Saved Application State/io.respawn.AmazonOrderExport.savedState",
+            ]
+          end
+          EOF
+          cd tap
+          if git diff --quiet -- Casks/amazon-order-export.rb; then
+            echo "Cask already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/amazon-order-export.rb
+          git commit -m "Brew cask update for amazon-order-export version v${version}"
+          git push origin HEAD:main
