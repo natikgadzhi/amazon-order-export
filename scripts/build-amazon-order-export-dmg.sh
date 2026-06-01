@@ -10,7 +10,12 @@ RELEASE_DIR="${RELEASE_DIR:-build/release}"
 DMG_STAGING_DIR="${DMG_STAGING_DIR:-build/dmg}"
 # Spaced display name, matching CFBundleDisplayName / INFOPLIST_KEY_CFBundleDisplayName.
 APP_NAME="${APP_NAME:-Amazon Order Export.app}"
-DMG_BASENAME="${DMG_BASENAME:-${APP_NAME%.app}}"
+# Keep the DMG (and therefore the published asset) name space-free even though
+# the app's display name has spaces. GitHub rewrites spaces in asset names to
+# dots on upload, which would break `shasum -a 256 -c AmazonOrderExport-*.dmg`
+# against the downloaded file and the Homebrew cask URL; a space-free name keeps
+# verification working and the asset tidy (AmazonOrderExport-<version>.dmg).
+DMG_BASENAME="${DMG_BASENAME:-AmazonOrderExport}"
 DMG_VERSION="${DMG_VERSION:-}"
 DMG_NAME="${DMG_NAME:-}"
 APP_SIGN_IDENTITY="${APP_SIGN_IDENTITY:-}"
@@ -170,7 +175,9 @@ resolve_release_metadata() {
   fi
 
   if [[ -z "${DMG_NAME}" ]]; then
-    DMG_NAME="${DMG_BASENAME} ${DMG_VERSION}.dmg"
+    # Hyphen, not space: a space-free asset name survives GitHub's upload rename
+    # and keeps `shasum -c` working against the downloaded file.
+    DMG_NAME="${DMG_BASENAME}-${DMG_VERSION}.dmg"
   fi
 }
 
