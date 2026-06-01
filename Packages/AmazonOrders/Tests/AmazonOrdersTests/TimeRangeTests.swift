@@ -7,7 +7,7 @@ import Testing
 struct TimeRangeURLTests {
   @Test("each range maps to Amazon's timeFilter token")
   func timeFilterTokens() {
-    #expect(TimeRange.last30.timeFilter == "last-30")
+    #expect(TimeRange.last30.timeFilter == "last30")
     #expect(TimeRange.months3.timeFilter == "months-3")
     #expect(TimeRange.year(2026).timeFilter == "year-2026")
     #expect(TimeRange.allTime.timeFilter == nil)
