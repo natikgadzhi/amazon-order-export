@@ -76,8 +76,10 @@ import_signing_certificate_if_needed() {
     return
   fi
 
-  if [[ -z "${APPLE_DEVELOPER_ID_P12_PASSWORD:-}" ]]; then
-    echo "APPLE_DEVELOPER_ID_P12_PASSWORD is required when APPLE_DEVELOPER_ID_P12_BASE64 is set." >&2
+  # An empty export password is valid (`security import -P ""`), so only fail
+  # when the variable is genuinely unset — `+set` distinguishes that from "".
+  if [[ -z "${APPLE_DEVELOPER_ID_P12_PASSWORD+set}" ]]; then
+    echo "APPLE_DEVELOPER_ID_P12_PASSWORD must be set (may be empty) when APPLE_DEVELOPER_ID_P12_BASE64 is set." >&2
     exit 1
   fi
 
