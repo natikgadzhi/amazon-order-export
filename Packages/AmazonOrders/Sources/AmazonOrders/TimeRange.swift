@@ -14,7 +14,7 @@ public enum TimeRange: Sendable, Equatable, Hashable {
   /// Amazon filter — it's a loop over years).
   public var timeFilter: String? {
     switch self {
-    case .last30: return "last-30"
+    case .last30: return "last30"
     case .months3: return "months-3"
     case .year(let y): return "year-\(y)"
     case .allTime: return nil
