@@ -141,13 +141,12 @@ jobs:
             version "${version}"
             sha256 "${SHA256}"
 
-            url "https://github.com/natikgadzhi/amazon-order-export/releases/download/v#{version}/AmazonOrderExport-#{version}.dmg",
-                verified: "github.com/natikgadzhi/amazon-order-export/"
+            url "https://github.com/natikgadzhi/amazon-order-export/releases/download/v#{version}/AmazonOrderExport-#{version}.dmg"
             name "Amazon Order Export"
             desc "Exports your own Amazon order and transaction history to CSV"
             homepage "https://github.com/natikgadzhi/amazon-order-export"
 
-            depends_on macos: ">= :tahoe"
+            depends_on macos: :tahoe
 
             app "Amazon Order Export.app"
 
